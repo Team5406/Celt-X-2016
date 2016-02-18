@@ -10,13 +10,13 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Drivetrain {
 
-	CANTalon leftSRX;
-	CANTalon leftFollowerSRX;
+	private CANTalon leftSRX;
+	private CANTalon leftFollowerSRX;
 	
-	CANTalon rightSRX;
-	CANTalon rightFollowerSRX;
+	private CANTalon rightSRX;
+	private CANTalon rightFollowerSRX;
 
-	DoubleSolenoid shiftSolenoid;
+	private DoubleSolenoid shiftSolenoid;
 	
 	public Drivetrain(){
     	
