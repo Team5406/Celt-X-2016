@@ -113,8 +113,9 @@ public class Arm {
 	}
 	
 	public void sendSmartdashInfo(){
-		SmartDashboard.putNumber("Arm Encoder", leftMotor.getEncPosition());
-		SmartDashboard.putNumber("Arm Speed", leftMotor.getEncVelocity());
+		SmartDashboard.putNumber("Arm Encoder", leftMotor.get());
+		SmartDashboard.putNumber("Target", leftMotor.getSetpoint());
+		SmartDashboard.putBoolean("On Target", (leftMotor.getError() < Constants.armPos_deadband));
 	}
 
 }

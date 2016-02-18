@@ -69,6 +69,10 @@ public class PID {
 		this.desiredPosition = desiredPosition;
 	}
 	
+	public double getDesiredPosition(){
+		return desiredPosition;
+	}
+	
 	public void resetAccumI(){
 		accumI = 0.0;
 	}

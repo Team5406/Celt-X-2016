@@ -111,8 +111,9 @@ public class BatteringRamp {
 	}
 	
 	public void sendSmartdashInfo(){
-		SmartDashboard.putNumber("Ramp Encoder", encoder.get());
-		SmartDashboard.putNumber("Ramp Speed", encoder.getRate());
+		SmartDashboard.putNumber("Ramp Encoder", getEncoder());
+		SmartDashboard.putNumber("Target", pid.getDesiredPosition());
+		SmartDashboard.putBoolean("On Target", pid.isDone(getEncoder(), Constants.rampPos_deadband));
 	}
 	
 }

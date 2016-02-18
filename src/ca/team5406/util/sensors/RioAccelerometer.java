@@ -16,12 +16,19 @@ public class RioAccelerometer{
 	private double zVelAccum;
 	private double zDistAccum;
 	
+	private boolean useMeters;
 	private boolean running;
 	
 	private java.util.Timer timer;
 	private Timer wpiTimer;
-	
+
+
 	public RioAccelerometer(){
+		this(false);
+	}
+	
+	public RioAccelerometer(boolean useMeters){
+		useMeters = this.useMeters;
 		running = false;
 		rioAcceler = new BuiltInAccelerometer();
 		xVelAccum = 0;
@@ -33,28 +40,27 @@ public class RioAccelerometer{
 		wpiTimer = new Timer();
 		wpiTimer.start();
 		
-	    
 	    timer = new java.util.Timer("RioAccelTimer");//create a new Timer
 	    start();
 	    
 	}
-	
+
 	private TimerTask update = new TimerTask() {
         @Override
         public void run() {
-            xVelAccum += rioAcceler.getX() * wpiTimer.get();
+            xVelAccum += getAccelX() * wpiTimer.get();
             xDistAccum += xVelAccum * wpiTimer.get();
-            yVelAccum += rioAcceler.getY() * wpiTimer.get();
+            yVelAccum += getAccelY() * wpiTimer.get();
             yDistAccum += yVelAccum * wpiTimer.get();
-            zVelAccum += rioAcceler.getZ() * wpiTimer.get();
+            zVelAccum += getAccelZ() * wpiTimer.get();
             zDistAccum += zVelAccum * wpiTimer.get();
             wpiTimer.reset();
         }
     };
     
-    public void start(){
+    private void start(){
     	running = true;
-	    timer.scheduleAtFixedRate(update, 30, 3000);//this line starts the timer 
+	    timer.scheduleAtFixedRate(update, 10, 100);//this line starts the timer 
     }
     
     public void stop(){
@@ -73,7 +79,7 @@ public class RioAccelerometer{
     	return xVelAccum;
     }
     public double getAccelX(){
-    	return rioAcceler.getX();
+    	return rioAcceler.getX() * (useMeters ? 9.81 : 32.17);
     }
     
     public double getDistY(){
@@ -83,7 +89,7 @@ public class RioAccelerometer{
     	return yVelAccum;
     }
     public double getAccelY(){
-    	return rioAcceler.getY();
+    	return rioAcceler.getY() * (useMeters ? 9.81 : 32.17);
     }
     
     public double getDistZ(){
@@ -93,7 +99,7 @@ public class RioAccelerometer{
     	return zVelAccum;
     }
     public double getAccelZ(){
-    	return rioAcceler.getZ();
+    	return rioAcceler.getZ() * (useMeters ? 9.81 : 32.17);
     }
 	
 }

@@ -2,6 +2,7 @@ package ca.team5406.frc2016.subsystems;
 
 import ca.team5406.frc2016.Constants;
 import ca.team5406.util.Util;
+import ca.team5406.util.sensors.RioAccelerometer;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
@@ -17,6 +18,8 @@ public class Drivetrain {
 	private CANTalon rightFollowerSRX;
 
 	private DoubleSolenoid shiftSolenoid;
+	
+	private RioAccelerometer rioAccel;
 	
 	public Drivetrain(){
     	
@@ -36,6 +39,8 @@ public class Drivetrain {
     	rightFollowerSRX.set(rightSRX.getDeviceID());
    
     	shiftSolenoid = new DoubleSolenoid(Constants.shiftUpSolenoid, Constants.shiftDownSolenoid);
+    	
+    	rioAccel = new RioAccelerometer();
 		
 	}
 	
@@ -128,6 +133,9 @@ public class Drivetrain {
 		SmartDashboard.putNumber("Left Pos", leftSRX.getEncVelocity());
 		SmartDashboard.putNumber("Right Speed", rightSRX.getEncPosition());
 		SmartDashboard.putNumber("Right Pos", rightSRX.getEncVelocity());
+		SmartDashboard.putNumber("X Dist", rioAccel.getDistX());
+		SmartDashboard.putNumber("Y Dist", rioAccel.getDistY());
+		SmartDashboard.putNumber("Z Dist", rioAccel.getDistZ());
 	}
 	
 }
