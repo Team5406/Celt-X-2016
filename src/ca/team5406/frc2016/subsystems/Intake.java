@@ -18,11 +18,11 @@ public class Intake {
 	
 	public void setIntake(double speed){
 		intakeMotorA.set(speed);
-		intakeMotorB.set(speed);
+		intakeMotorB.set(-speed);
 	}
 	
 	public boolean hasBall(){
-		return ballSensor.get();
+		return !ballSensor.get();
 	}
 	
 	public void intakeUntilBall(){

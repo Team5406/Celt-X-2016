@@ -21,11 +21,11 @@ public class Drivetrain {
 	public Drivetrain(){
     	
     	leftSRX = createDriveTalon(Constants.leftDriveMotorA);
-    	leftSRX.reverseOutput(true);
-    	leftSRX.reverseSensor(true);
     	leftFollowerSRX = new CANTalon(Constants.leftDriveMotorB);
     	rightSRX = createDriveTalon(Constants.rightDriveMotorA);
     	rightFollowerSRX = new CANTalon(Constants.rightDriveMotorB);
+    	leftSRX.setInverted(true);
+    	leftFollowerSRX.setInverted(true);
 
     	leftSRX.changeControlMode(TalonControlMode.PercentVbus);
     	rightSRX.changeControlMode(TalonControlMode.PercentVbus);

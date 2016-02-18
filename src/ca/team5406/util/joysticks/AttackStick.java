@@ -1,6 +1,6 @@
 package ca.team5406.util.joysticks;
 
-public class AttackStick extends xController {
+public class AttackStick extends ControllerBase {
 	
 	public static final int TRIGGER = 1;
 

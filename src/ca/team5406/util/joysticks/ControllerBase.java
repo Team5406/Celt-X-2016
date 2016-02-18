@@ -2,12 +2,12 @@ package ca.team5406.util.joysticks;
 
 import edu.wpi.first.wpilibj.Joystick;
 
-public class xController extends Joystick {
+public class ControllerBase extends Joystick {
 
 	private int numButtons = 10;
 	private boolean[] previousButtonState = new boolean[numButtons+1];
 	
-	public xController(int port) {
+	public ControllerBase(int port) {
 		super(port);
 	}
 	

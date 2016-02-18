@@ -2,10 +2,11 @@
 package ca.team5406.frc2016;
 
 import ca.team5406.frc2016.subsystems.*;
+import ca.team5406.util.Util;
 import ca.team5406.util.joysticks.XboxController;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.IterativeRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.Timer;
 
 public class Robot extends IterativeRobot {
 
@@ -77,23 +78,78 @@ public class Robot extends IterativeRobot {
         	drive.shiftDown();
         }
         
-        //Operator Gamepad
+//      Operator Gamepad
+//        if(operatorGamepad.getButtonOnce(XboxController.A_BUTTON)){
+//        	arm.setDesiredPos(Arm.Positions.DOWN);
+//        }
+//        else if(operatorGamepad.getButtonOnce(XboxController.X_BUTTON)){
+//        	arm.setDesiredPos(Arm.Positions.CARRY);
+//        }
+//        else if(operatorGamepad.getButtonOnce(XboxController.B_BUTTON)){
+//        	arm.setDesiredPos(Arm.Positions.INSIDE);
+//        }
+//        else if(operatorGamepad.getButtonOnce(XboxController.Y_BUTTON)){
+//        	arm.setDesiredPos(Arm.Positions.UP);
+//        	if(ramp.getCurrentPos() == BatteringRamp.Positions.UP || ramp.getDesiredPos() == BatteringRamp.Positions.UP){
+//        		ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
+//        	}
+//        }
+        
+//        if(operatorGamepad.getDirectionPad() == 0){ //DOWN
+//        	ramp.setDesiredPos(BatteringRamp.Positions.DOWN);
+//        }
+//        else if(operatorGamepad.getDirectionPad() == 90){ //MID
+//        	ramp.setDesiredPos(BatteringRamp.Positions.MID);
+//        }
+//        else if(operatorGamepad.getDirectionPad() == 180){ //UP
+//        	if(arm.getDesiredPos() == Arm.Positions.UP || arm.getCurrentPos() == Arm.Positions.UP){
+//        		ramp.setDesiredPos(BatteringRamp.Positions.UP);
+//        	}
+//        	else{
+//        		ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
+//        	}
+//        }
+//        else if(operatorGamepad.getDirectionPad() == 270){ //UP
+//        	ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
+//        }
+        
+        arm.setDesiredPos(Arm.Positions.MANUAL);
         arm.joystickControl(operatorGamepad.getLeftY());
+        ramp.setDesiredPos(BatteringRamp.Positions.MANUAL);
         ramp.joystickControl(operatorGamepad.getRightY());
-        if(Math.abs(operatorGamepad.getRightTrigger()) >= Constants.xboxControllerDeadband){
-        	intake.intakeUntilBall();
-        }
-        else if(Math.abs(operatorGamepad.getLeftTrigger()) >= Constants.xboxControllerDeadband){
-        	intake.reverseIntake();
-        }
-        else{
-        	intake.stopIntake();
-        }
         
         
+        intake.runControlLoop(operatorGamepad.getRightTriggerPressed(), operatorGamepad.getLeftTriggerPressed());
+//        ramp.runControlLoop();
         
-        drive.sendSmartdashInfo();
-        SmartDashboard.putString("Const", Constants.debugString);
+        
+//        drive.sendSmartdashInfo();
+//        arm.sendSmartdashInfo();
+//        ramp.sendSmartdashInfo();
+//        SmartDashboard.putString("Const", Constants.debugString);
+    }
+    
+
+    private Timer waveTimer = new Timer();
+    public void testInit(){
+    	waveTimer.start();
+    }
+    
+    public void testPeriodic(){
+    	double wave = Util.squareWave(waveTimer, 2.0, 0, 1);
+    	if(wave == 0){
+    		ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
+    	}
+    	else{
+    		ramp.setDesiredPos(BatteringRamp.Positions.MID);
+    	}
+    	
+    	if(wave == 0){
+    		arm.setDesiredPos(Arm.Positions.INSIDE);
+    	}
+    	else{
+    		arm.setDesiredPos(Arm.Positions.CARRY);
+    	}
     }
     
 }

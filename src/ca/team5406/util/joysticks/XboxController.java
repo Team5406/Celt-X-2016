@@ -1,6 +1,8 @@
 package ca.team5406.util.joysticks;
 
-public class XboxController extends xController {
+import ca.team5406.frc2016.Constants;
+
+public class XboxController extends ControllerBase {
 	
 
 	public static final int A_BUTTON = 1;
@@ -46,8 +48,16 @@ public class XboxController extends xController {
 		return super.getRawAxis(LEFT_TRIGGER_AXIS);
 	}
 	
+	public boolean getLeftTriggerPressed(){
+		return Math.abs(super.getRawAxis(LEFT_TRIGGER_AXIS)) > Constants.xboxControllerDeadband;
+	}
+	
 	public double getRightTrigger(){
 		return super.getRawAxis(RIGHT_TRIGGER_AXIS);
+	}
+	
+	public boolean getRightTriggerPressed(){
+		return Math.abs(super.getRawAxis(RIGHT_TRIGGER_AXIS)) > Constants.xboxControllerDeadband;
 	}
 	
 	public int getDirectionPad(){

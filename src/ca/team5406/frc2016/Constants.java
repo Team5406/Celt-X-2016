@@ -4,12 +4,12 @@ import ca.team5406.util.ConstantsBase;
 
 public class Constants extends ConstantsBase {
 	//Talon SRX IDs
-    public static int leftDriveMotorA = 1;
-    public static int leftDriveMotorB = 2;
-    public static int rightDriveMotorA = 3;
-    public static int rightDriveMotorB = 4;
-    public static int armMotorA = 5;
-    public static int armMotorB = 6;
+    public static int leftDriveMotorA = 10;
+    public static int leftDriveMotorB = 11;
+    public static int rightDriveMotorA = 12;
+    public static int rightDriveMotorB = 13;
+    public static int armMotorA = 14;
+    public static int armMotorB = 15;
 
     //PWM Ports
     public static int intakeMotorA = 0;
@@ -21,7 +21,7 @@ public class Constants extends ConstantsBase {
     //Digital Ports
     public static int ballSensor = 0;
     public static int batteringRampEncA = 1;
-    public static int batteringRampEncB = 1;
+    public static int batteringRampEncB = 2;
     
     //Analog Ports
     public static int armPot = 0;
@@ -41,21 +41,34 @@ public class Constants extends ConstantsBase {
     //Drive Constants
     public static int lowGearCpr = 0;
     public static double distPerRev = (8 * Math.PI);
+    public static int maxSpeed = 0;
+    public static double highGearMult = 1.0;
     
     //Arm Constants
-    public static int armUpPosition = 1000;
-    public static int armInsidePosition = 700;
-    public static int armCarryPosition = 200;
-    public static int armDownPosition = 0;
+    public static int armUpPos = 1000;
+    public static int armInsidePos = 700;
+    public static int armCarryPos = 200;
+    public static int armDownPos = 0;
+
+    public static double armPos_kP = 0.0;
+    public static double armPos_kI = 0.0;
+    public static double armPos_kD = 0.0;
+    public static int armPos_deadband = 0;
     
     //Battering Ramp Constants
-    public static int rampStowedPosititon = 0;
-    public static int rampUpPosition = 200;
+    public static int rampUpPosition = -500;
+    public static int rampScalePosition = 100;
     public static int rampMidPosition = 600;
     public static int rampDownPosition = 1000;
+    public static double rampMaxCurrent = 20.0;
+
+    public static double rampPos_kP = 0.0;
+    public static double rampPos_kI = 0.0;
+    public static double rampPos_kD = 0.0;
+    public static int rampPos_deadband = 0;
     
     //Controller Constants
-    public static double xboxControllerDeadband = 0.15;
+    public static double xboxControllerDeadband = 0.2;
     
     //Debug
     public static String debugString = "Default";
