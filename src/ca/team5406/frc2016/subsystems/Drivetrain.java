@@ -32,11 +32,17 @@ public class Drivetrain {
 
     	leftSRX.changeControlMode(TalonControlMode.PercentVbus);
     	rightSRX.changeControlMode(TalonControlMode.PercentVbus);
+//    	initSpeedControl();
     	
     	leftFollowerSRX.changeControlMode(TalonControlMode.Follower);
     	leftFollowerSRX.set(leftSRX.getDeviceID());
     	rightFollowerSRX.changeControlMode(TalonControlMode.Follower);
     	rightFollowerSRX.set(rightSRX.getDeviceID());
+    	
+//		leftSRX.setSafetyEnabled(true);
+//		leftFollowerSRX.setSafetyEnabled(true);
+//		rightSRX.setSafetyEnabled(true);
+//		rightFollowerSRX.setSafetyEnabled(true);
    
     	shiftSolenoid = new DoubleSolenoid(Constants.shiftUpSolenoid, Constants.shiftDownSolenoid);
     	
@@ -48,30 +54,17 @@ public class Drivetrain {
 		CANTalon talon = new CANTalon(id);
 		talon.setFeedbackDevice(FeedbackDevice.QuadEncoder);
 	    talon.reverseSensor(false);
-	    talon.configNominalOutputVoltage(+0f, -0f);
-	    talon.configPeakOutputVoltage(+12f, -12f);
+	    talon.configNominalOutputVoltage(+0.0f, -0.0f);
+	    talon.configPeakOutputVoltage(+12.0f, -12.0f);
 	    talon.setAllowableClosedLoopErr(0);
 	    return talon;
 	}
 	
-	private void initPositionControlSRX(CANTalon talon){
-		talon.changeControlMode(TalonControlMode.Position);
-		talon.setP(Constants.lowGearDriveTo_kP);
-		talon.setI(Constants.lowGearDriveTo_kI);
-		talon.setD(Constants.lowGearDriveTo_kD);
-		talon.setF(Constants.lowGearDriveTo_kF);
-		talon.configEncoderCodesPerRev(Constants.lowGearCpr);
-		talon.setEncPosition(0);
-	}
-	
-	private void initDriverControlSRX(CANTalon talon){
-		talon.changeControlMode(TalonControlMode.PercentVbus);
-		talon.set(0);
-	}
-	
-	public void initPositionControl(){
-		initPositionControlSRX(leftSRX);
-		initPositionControlSRX(rightSRX);
+	private void initSpeedControl(){
+		leftSRX.changeControlMode(TalonControlMode.Speed);
+		leftSRX.setPID(Constants.lowGearSpeed_kP, Constants.lowGearSpeed_kI, Constants.lowGearSpeed_kD, Constants.lowGearSpeed_kF, 0, 20, 0);
+		rightSRX.changeControlMode(TalonControlMode.Speed);
+		rightSRX.setPID(Constants.lowGearSpeed_kP, Constants.lowGearSpeed_kI, Constants.lowGearSpeed_kD, Constants.lowGearSpeed_kF, 0, 20, 0);
 	}
 	
 	private boolean driveToFirstRun = true;
@@ -98,14 +91,16 @@ public class Drivetrain {
 		}
 		return false;
 	}
-	
-	public void initDriverControl(){
-		initDriverControlSRX(leftSRX);
-		initDriverControlSRX(rightSRX);
+	public void resetDriveTo(){
+		driveToFirstRun = true;
 	}
 	
 	public void arcadeDrive(double yAxis, double xAxis){
+		yAxis = Util.applyDeadband(yAxis, Constants.xboxControllerDeadband);
+		xAxis = Util.applyDeadband(xAxis, Constants.xboxControllerDeadband) * (getShiftState() ? Math.abs(yAxis) : 1);
+
 		setLeftRightPower(yAxis + xAxis, yAxis - xAxis);
+//		setLeftRightSpeed(yAxis + xAxis, yAxis - xAxis);
 	}
 	
 	public boolean getShiftState(){
@@ -115,27 +110,26 @@ public class Drivetrain {
 	public void shiftUp(){
 		shiftSolenoid.set(DoubleSolenoid.Value.kForward);
 	}
-	
 	public void shiftDown(){
 		shiftSolenoid.set(DoubleSolenoid.Value.kReverse);
 	}
 	
+	private void setLeftRightSpeed(double leftSpeed, double rightSpeed){
+		leftSRX.set(leftSpeed * Constants.maxSpeed);
+		rightSRX.set(rightSpeed * Constants.maxSpeed);
+	}
+	
 	private void setLeftRightPower(double leftPower, double rightPower){
-		leftPower = Util.applyDeadband(leftPower, Constants.xboxControllerDeadband);
-		rightPower = Util.applyDeadband(rightPower, Constants.xboxControllerDeadband);
-		
 		leftSRX.set(leftPower);
 		rightSRX.set(rightPower);
 	}
 	
 	public void sendSmartdashInfo(){
 		SmartDashboard.putNumber("Left Speed", leftSRX.getEncPosition());
-		SmartDashboard.putNumber("Left Pos", leftSRX.getEncVelocity());
+		SmartDashboard.putNumber("Left Pos", leftSRX.getEncPosition());
 		SmartDashboard.putNumber("Right Speed", rightSRX.getEncPosition());
-		SmartDashboard.putNumber("Right Pos", rightSRX.getEncVelocity());
-		SmartDashboard.putNumber("X Dist", rioAccel.getDistX());
+		SmartDashboard.putNumber("Right Pos", rightSRX.getEncPosition());
 		SmartDashboard.putNumber("Y Dist", rioAccel.getDistY());
-		SmartDashboard.putNumber("Z Dist", rioAccel.getDistZ());
 	}
 	
 }

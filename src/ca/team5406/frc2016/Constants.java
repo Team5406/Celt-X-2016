@@ -37,41 +37,47 @@ public class Constants extends ConstantsBase {
     public static double lowGearDriveTo_kD = 0;
     public static double lowGearDriveTo_kF = 0;
     public static double lowGearDriveToDeadband = 0;
+
+    public static double lowGearSpeed_kP = 0;
+    public static double lowGearSpeed_kI = 0;
+    public static double lowGearSpeed_kD = 0;
+    public static double lowGearSpeed_kF = 0;
+    public static double lowGearSpeed_deadband = 0;
     
     //Drive Constants
     public static int lowGearCpr = 0;
     public static double distPerRev = (8 * Math.PI);
-    public static int maxSpeed = 0;
-    public static double highGearMult = 1.0;
+    public static double maxSpeed = 17.67; //rev / 10ms
+    public static double highGearMult = 3.63;
     
     //Arm Constants
-    public static int armUpPos = 1000;
-    public static int armInsidePos = 700;
-    public static int armCarryPos = 200;
-    public static int armDownPos = 0;
+    public static int armUpPos = 243000+290000;
+    public static int armInsidePos = 290000;
+    public static int armCarryPos = 120000;//-170000;
+    public static int armDownPos = 0;//-290000;
 
-    public static double armPos_kP = 0.0;
+    public static double armPos_kP = 0.008;
     public static double armPos_kI = 0.0;
-    public static double armPos_kD = 0.0;
-    public static int armPos_deadband = 0;
+    public static double armPos_kD = 0.000;
+    public static int armPos_deadband = 10000;
     
     //Battering Ramp Constants
-    public static int rampUpPosition = -500;
-    public static int rampScalePosition = 100;
-    public static int rampMidPosition = 600;
-    public static int rampDownPosition = 1000;
-    public static double rampMaxCurrent = 20.0;
+    public static int rampUpPosition = 60000;
+    public static int rampInsidePosition = 45000;
+    public static int rampDownPosition = 0;
+    public static int rampScalePosition = 38000;
+    public static int rampMidPosition = 16000;
 
-    public static double rampPos_kP = 0.0;
-    public static double rampPos_kI = 0.0;
-    public static double rampPos_kD = 0.0;
-    public static int rampPos_deadband = 0;
+    public static double rampPos_kP = 0.0001;
+    public static double rampPos_kI = 0.0001;
+    public static double rampPos_kD = 0.00009;
+    public static double rampHold_kP = 0.0001;
+    public static double rampHold_kI = 0.0001;
+    public static double rampHold_kD = 0.00009;
+    public static int rampPos_deadband = 2000;
     
     //Controller Constants
     public static double xboxControllerDeadband = 0.2;
-    
-    //Debug
-    public static String debugString = "Default";
 
 
     public static void reload(){
@@ -80,7 +86,7 @@ public class Constants extends ConstantsBase {
     
     @Override
     public String getFileLocation() {
-        return "~/constants.txt";
+        return "~/constants.json";
     }
 
     static {

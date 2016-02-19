@@ -1,12 +1,12 @@
 
 package ca.team5406.frc2016;
 
+import ca.team5406.frc2016.auto.*;
 import ca.team5406.frc2016.subsystems.*;
-import ca.team5406.util.Util;
 import ca.team5406.util.joysticks.XboxController;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.IterativeRobot;
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 public class Robot extends IterativeRobot {
 
@@ -19,9 +19,13 @@ public class Robot extends IterativeRobot {
 	private Intake intake;
 	private BatteringRamp ramp;
 	
+	private SendableChooser autonSelector;	
+	private AutonomousRoutine selectedRoutine;
 	
 	// Called once when the robot is booted
     public void robotInit() {
+    	new Constants().loadFromFile();
+    	
     	driverGamepad = new XboxController(0);
     	operatorGamepad = new XboxController(1);
     	
@@ -31,44 +35,35 @@ public class Robot extends IterativeRobot {
     	arm = new Arm();
     	intake = new Intake();
     	ramp = new BatteringRamp();
+    	
+    	autonSelector = new SendableChooser();
     }
     
     // Called the first time the robot enters disabled mode (after init)
     public void disabledInit() {
-    	Constants.reload();
+    	autonSelector.addDefault("Do Nothing", new DoNothing());
     }
     
     // Called periodically while the robot is disabled
-    public void disabledPeriodic(){
-    	driverGamepad.updateButtons();
-    	
-    	if(driverGamepad.getButtonOnce(XboxController.X_BUTTON)){
-    		System.out.println("Reloading");
-    		Constants.reload();
-    		System.out.println(Constants.debugString);
-    	}
+    public void disabledPeriodic(){  	
+        drive.sendSmartdashInfo();
+        arm.sendSmartdashInfo();
+        ramp.sendSmartdashInfo();
     }
     
     // Caled each time the robot enters auton
     public void autonomousInit() {
-    	
-    }
-
-    // Called periodically while the robot is enabled in auton
-    public void autonomousPeriodic() {
-    	
+    	selectedRoutine = (AutonomousRoutine) autonSelector.getSelected();
+    	selectedRoutine.start();
     }
 
     // Called each time the robot enters tele-op
     public void teleopInit(){
-    	
+    	selectedRoutine.kill();
     }
     
     // Called periodically while the robot is enabled in tele-op
     public void teleopPeriodic() {
-    	driverGamepad.updateButtons();
-    	operatorGamepad.updateButtons();
-    	
     	//Driver Gamepad
         drive.arcadeDrive(driverGamepad.getLeftY(), driverGamepad.getLeftX());
         if(driverGamepad.getRawButton(XboxController.Y_BUTTON)){
@@ -77,79 +72,65 @@ public class Robot extends IterativeRobot {
         else if(driverGamepad.getRawButton(XboxController.X_BUTTON)){
         	drive.shiftDown();
         }
+        if((arm.getCurrentPos() == Arm.Positions.DOWN || arm.getDesiredPos() == Arm.Positions.DOWN)&& driverGamepad.getRightTriggerPressed()){
+        	arm.setDesiredPos(Arm.Positions.CARRY);
+        }
         
 //      Operator Gamepad
-//        if(operatorGamepad.getButtonOnce(XboxController.A_BUTTON)){
-//        	arm.setDesiredPos(Arm.Positions.DOWN);
-//        }
-//        else if(operatorGamepad.getButtonOnce(XboxController.X_BUTTON)){
-//        	arm.setDesiredPos(Arm.Positions.CARRY);
-//        }
-//        else if(operatorGamepad.getButtonOnce(XboxController.B_BUTTON)){
-//        	arm.setDesiredPos(Arm.Positions.INSIDE);
-//        }
-//        else if(operatorGamepad.getButtonOnce(XboxController.Y_BUTTON)){
-//        	arm.setDesiredPos(Arm.Positions.UP);
-//        	if(ramp.getCurrentPos() == BatteringRamp.Positions.UP || ramp.getDesiredPos() == BatteringRamp.Positions.UP){
-//        		ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
-//        	}
-//        }
-        
-//        if(operatorGamepad.getDirectionPad() == 0){ //DOWN
-//        	ramp.setDesiredPos(BatteringRamp.Positions.DOWN);
-//        }
-//        else if(operatorGamepad.getDirectionPad() == 90){ //MID
-//        	ramp.setDesiredPos(BatteringRamp.Positions.MID);
-//        }
-//        else if(operatorGamepad.getDirectionPad() == 180){ //UP
-//        	if(arm.getDesiredPos() == Arm.Positions.UP || arm.getCurrentPos() == Arm.Positions.UP){
-//        		ramp.setDesiredPos(BatteringRamp.Positions.UP);
-//        	}
-//        	else{
-//        		ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
-//        	}
-//        }
-//        else if(operatorGamepad.getDirectionPad() == 270){ //UP
-//        	ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
-//        }
-        
-        arm.setDesiredPos(Arm.Positions.MANUAL);
-        arm.joystickControl(operatorGamepad.getLeftY());
-        ramp.setDesiredPos(BatteringRamp.Positions.MANUAL);
-        ramp.joystickControl(operatorGamepad.getRightY());
-        
-        
-        intake.runControlLoop(operatorGamepad.getRightTriggerPressed(), operatorGamepad.getLeftTriggerPressed());
-//        ramp.runControlLoop();
-        
-        
-//        drive.sendSmartdashInfo();
-//        arm.sendSmartdashInfo();
-//        ramp.sendSmartdashInfo();
-//        SmartDashboard.putString("Const", Constants.debugString);
-    }
-    
+//        Arm Control
+        if(operatorGamepad.getButtonHeld(XboxController.A_BUTTON)){
+        	arm.setDesiredPos(Arm.Positions.DOWN);
+        }
+        else if(operatorGamepad.getButtonHeld(XboxController.B_BUTTON)){
+        	arm.setDesiredPos(Arm.Positions.CARRY);
+        }
+        else if(operatorGamepad.getButtonHeld(XboxController.X_BUTTON)){
+        	arm.setDesiredPos(Arm.Positions.INSIDE);
+        }
+        else if(operatorGamepad.getButtonHeld(XboxController.Y_BUTTON)){
+        	arm.setDesiredPos(Arm.Positions.UP);
+        	if(ramp.getCurrentPos() == BatteringRamp.Positions.UP || ramp.getDesiredPos() == BatteringRamp.Positions.UP){
+        		ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
+        	}
+            else if(operatorGamepad.getButtonOnce(XboxController.RIGHT_STICK)){
+            	arm.setDesiredPos(Arm.Positions.MANUAL);
+            }
+        }
+        else if(arm.getCurrentPos() == Arm.Positions.MANUAL){
+        	arm.joystickControl(operatorGamepad.getRightY());
+        }
 
-    private Timer waveTimer = new Timer();
-    public void testInit(){
-    	waveTimer.start();
+//        Battering Ramp Control
+        if(operatorGamepad.getDirectionPad() == 180){
+        	ramp.setDesiredPos(BatteringRamp.Positions.DOWN);
+        }
+        else if(operatorGamepad.getDirectionPad() == 315){
+        	if(arm.getDesiredPos() == Arm.Positions.UP || arm.getCurrentPos() == Arm.Positions.UP){
+        		ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
+        	}
+        	else{
+        		ramp.setDesiredPos(BatteringRamp.Positions.UP);
+        	}
+        }
+        else if(operatorGamepad.getDirectionPad() == 270){
+        	ramp.setDesiredPos(BatteringRamp.Positions.MID);
+        }
+        else if(operatorGamepad.getDirectionPad() == 90){
+        	ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
+        }
+        else if(operatorGamepad.getButtonOnce(XboxController.LEFT_STICK)){
+        	ramp.setDesiredPos(BatteringRamp.Positions.MANUAL);
+        }
+        else if(ramp.getCurrentPos() == BatteringRamp.Positions.MANUAL){
+        	ramp.joystickControl(operatorGamepad.getLeftY());
+        }
+        
+//        Control Loops
+        intake.setIntakeButtons(operatorGamepad.getRightTriggerPressed(), operatorGamepad.getLeftTriggerPressed());
+        
+//      SmartDash
+        drive.sendSmartdashInfo();
+        arm.sendSmartdashInfo();
+        ramp.sendSmartdashInfo();
     }
-    
-    public void testPeriodic(){
-    	double wave = Util.squareWave(waveTimer, 2.0, 0, 1);
-    	if(wave == 0){
-    		ramp.setDesiredPos(BatteringRamp.Positions.SCALE);
-    	}
-    	else{
-    		ramp.setDesiredPos(BatteringRamp.Positions.MID);
-    	}
-    	
-    	if(wave == 0){
-    		arm.setDesiredPos(Arm.Positions.INSIDE);
-    	}
-    	else{
-    		arm.setDesiredPos(Arm.Positions.CARRY);
-    	}
-    }
-    
 }

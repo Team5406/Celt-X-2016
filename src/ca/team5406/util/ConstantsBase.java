@@ -1,5 +1,6 @@
 package ca.team5406.util;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -27,21 +28,13 @@ public abstract class ConstantsBase {
 
     public static class Constant {
         public String name;
-        public Class type;
+        public Class<?> type;
         public Object value;
 
-        public Constant(String name, Class type, Object value) {
+        public Constant(String name, Class<?> type, Object value) {
             this.name = name;
             this.type = type;
             this.value = value;
-        }
-
-        public boolean equals(Object o) {
-            String itsName = ((Constant) o).name;
-            Class itsType = ((Constant) o).type;
-            Object itsValue = ((Constant) o).value;
-            return o instanceof Constant && this.name.equals(itsName)
-                    && this.type.equals(itsType) && this.value.equals(itsValue);
         }
     }
 
@@ -51,24 +44,11 @@ public abstract class ConstantsBase {
         return new File(filePath);
     }
 
-    public boolean setConstant(String name, Double value) {
-        return setConstantRaw(name, value);
-    }
-
-    public boolean setConstant(String name, Integer value) {
-        return setConstantRaw(name, value);
-    }
-
-    public boolean setConstant(String name, String value) {
-        return setConstantRaw(name, value);
-    }
-
     private boolean setConstantRaw(String name, Object value) {
         boolean success = false;
         Field[] declaredFields = this.getClass().getDeclaredFields();
         for (Field field : declaredFields) {
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())
-                    && field.getName().equals(name)) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) && field.getName().equals(name)) {
                 try {
                     Object current = field.get(this);
                     field.set(this, value);
@@ -87,8 +67,7 @@ public abstract class ConstantsBase {
     public Object getValueForConstant(String name) throws Exception {
         Field[] declaredFields = this.getClass().getDeclaredFields();
         for (Field field : declaredFields) {
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())
-                    && field.getName().equals(name)) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) && field.getName().equals(name)) {
                 try {
                     return field.get(this);
                 } catch (IllegalArgumentException | IllegalAccessException e) {
@@ -102,13 +81,10 @@ public abstract class ConstantsBase {
     public Constant getConstant(String name) {
         Field[] declaredFields = this.getClass().getDeclaredFields();
         for (Field field : declaredFields) {
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())
-                    && field.getName().equals(name)) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) && field.getName().equals(name)) {
                 try {
-                    return new Constant(field.getName(), field.getType(),
-                            field.get(this));
+                    return new Constant(field.getName(), field.getType(), field.get(this));
                 } catch (IllegalArgumentException | IllegalAccessException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
@@ -116,94 +92,35 @@ public abstract class ConstantsBase {
         return new Constant("", Object.class, 0);
     }
 
-    public Collection<Constant> getConstants() {
-        List<Constant> constants = (List<Constant>) getAllConstants();
-        int stop = constants.size() - 1;
-        for (int i = 0; i < constants.size(); ++i) {
-            Constant c = constants.get(i);
-            if ("kEndEditableArea".equals(c.name)) {
-                stop = i;
-            }
-        }
-        return constants.subList(0, stop);
-    }
-
-    private Collection<Constant> getAllConstants() {
-        Field[] declaredFields = this.getClass().getDeclaredFields();
-        List<Constant> constants = new ArrayList<Constant>(
-                declaredFields.length);
-        for (Field field : declaredFields) {
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-                Constant c;
-                try {
-                    c = new Constant(field.getName(), field.getType(),
-                            field.get(this));
-                    constants.add(c);
-                } catch (IllegalArgumentException | IllegalAccessException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }
-        return constants;
-    }
-
-    public JSONObject getJSONObjectFromFile() throws IOException,
-            ParseException {
-        File file = getFile();
-        if (file == null || !file.exists()) {
-            return new JSONObject();
-        }
-        FileReader reader;
-        reader = new FileReader(file);
-        JSONParser jsonParser = new JSONParser();
-        return (JSONObject) jsonParser.parse(reader);
-    }
-
     public void loadFromFile() {
-        try {
-            JSONObject jsonObject = getJSONObjectFromFile();
-            Set<String> keys = jsonObject.keySet();
-            for (Object o : keys) {
-                String key = (String) o;
-                Object value = jsonObject.get(o);
-                if (value instanceof Long
-                        && getConstant(key).type.equals(int.class)) {
-                    value = new BigDecimal((Long) value).intValueExact();
-                }
-                setConstantRaw(key, value);
-            }
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ParseException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    public void saveToFile() {
-        File file = getFile();
-        if (file == null) {
-            return;
-        }
-        try {
-            JSONObject json = getJSONObjectFromFile();
-            FileWriter writer = new FileWriter(file);
-            for (String key : modifiedKeys.keySet()) {
-                try {
-                    Object value = getValueForConstant(key);
-                    json.put(key, value);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            writer.write(json.toJSONString());
-            writer.close();
-        } catch (IOException | ParseException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+		try {
+			File file = getFile();
+			FileReader fr = new FileReader(file);
+		    BufferedReader br = new BufferedReader(fr);
+		    String line;
+		    
+			while((line = br.readLine()) != null){
+				String[] parts = line.replaceAll(" ", "").split(":");
+				String name = parts[0];
+				double value = Double.parseDouble(parts[1]);
+				
+				if(name.startsWith("#")) continue; //Marked to skip
+				if(name.length() <= 2) continue; //Name too short
+				
+				if(setConstantRaw(name, value)){
+					System.out.println("Setting " + name + " to " + value);
+				}
+				else{
+					System.out.println("Error: Could not find constant: " + name);
+				}
+			}
+			
+		    br.close();
+		    fr.close();
+		}
+		catch (Exception e){
+			System.out.println("Error: Could not load constants!");
+		}
     }
 
 }

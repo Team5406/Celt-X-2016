@@ -4,6 +4,7 @@ import java.util.TimerTask;
 
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class RioAccelerometer{
 
@@ -54,13 +55,14 @@ public class RioAccelerometer{
             yDistAccum += yVelAccum * wpiTimer.get();
             zVelAccum += getAccelZ() * wpiTimer.get();
             zDistAccum += zVelAccum * wpiTimer.get();
+            SmartDashboard.putNumber("Timer", wpiTimer.get());
             wpiTimer.reset();
         }
     };
     
     private void start(){
     	running = true;
-	    timer.scheduleAtFixedRate(update, 10, 100);//this line starts the timer 
+	    timer.scheduleAtFixedRate(update, 10, 10);//this line starts the timer 
     }
     
     public void stop(){

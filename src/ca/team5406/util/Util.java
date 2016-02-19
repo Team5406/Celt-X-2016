@@ -21,4 +21,10 @@ public class Util {
 		}
 	}
 	
+	public static double sineWave(Timer timer, double period, double min, double max){
+		double amp = max - min;
+		double value = amp * Math.sin(timer.get() * period / Math.PI) + (min - amp/2);
+		return value;
+	}
+	
 }

@@ -3,7 +3,6 @@ package ca.team5406.util.joysticks;
 import ca.team5406.frc2016.Constants;
 
 public class XboxController extends ControllerBase {
-	
 
 	public static final int A_BUTTON = 1;
 	public static final int B_BUTTON = 2;
@@ -25,7 +24,6 @@ public class XboxController extends ControllerBase {
 
 	public XboxController(int port) {
 		super(port);
-		super.updateButtons();
 	}
 	
 	public double getLeftX(){
