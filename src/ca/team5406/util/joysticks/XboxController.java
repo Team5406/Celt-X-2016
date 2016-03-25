@@ -1,6 +1,7 @@
 package ca.team5406.util.joysticks;
 
 import ca.team5406.frc2016.Constants;
+import ca.team5406.util.joysticks.XboxController.DirectionPad;
 
 public class XboxController extends ControllerBase {
 
@@ -21,6 +22,14 @@ public class XboxController extends ControllerBase {
 	public static final int RIGHT_TRIGGER_AXIS = 3;
 	public static final int RIGHT_X_AXIS = 4;
 	public static final int RIGHT_Y_AXIS = 5;
+	
+	public static enum DirectionPad{
+		UP,
+		DOWN,
+		LEFT,
+		RIGHT,
+		NONE
+	}
 
 	public XboxController(int port) {
 		super(port);
@@ -58,8 +67,20 @@ public class XboxController extends ControllerBase {
 		return Math.abs(super.getRawAxis(RIGHT_TRIGGER_AXIS)) > Constants.xboxControllerDeadband;
 	}
 	
-	public int getDirectionPad(){
-		return super.getPOV();
+	public DirectionPad getDirectionPad(){
+		int dir = super.getPOV();
+		switch(dir){
+			default:
+				return DirectionPad.NONE;
+			case 0:
+				return DirectionPad.UP;
+			case 90:
+				return DirectionPad.RIGHT;
+			case 180:
+				return DirectionPad.DOWN;
+			case 270:
+				return DirectionPad.LEFT;
+		}
 	}
 	
 }

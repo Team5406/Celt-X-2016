@@ -1,51 +1,83 @@
 package ca.team5406.frc2016.subsystems;
 
-import java.util.TimerTask;
-
 import ca.team5406.frc2016.Constants;
 import ca.team5406.util.PID;
 import ca.team5406.util.Util;
+import ca.team5406.util.sensors.VictorSafegaurd;
 import ca.team5406.util.sensors.RelativeEncoder;
+import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.VictorSP;
+import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
+import edu.wpi.first.wpilibj.CANTalon.TalonControlMode;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-public class BatteringRamp {
+public class BatteringRamp extends Subsystem {
 	
 	private VictorSP motor;
+	private CANTalon talon;
 	private RelativeEncoder encoder;
+	private VictorSafegaurd motorSafegaurd;
+	
+	private boolean isPracticeBot;
 	
 	private PID positionPid;
 	private PID posHoldPid;
 	
 	private Positions desiredPosition;
 	private Positions currentPosition;
-
-	private java.util.Timer timer;
 	
 	public static enum Positions{
 		NONE,
 		DOWN,
 		MID,
 		SCALE,
+		INSIDE,
 		UP,
 		MOVING,
-		MANUAL
+		MANUAL;
+
+	    private int id;
+	    public int getValue() { return id; }
+		public void set(int i) {
+			this.id = i;
+		}
 	}
 	
-	public BatteringRamp(){
+	public BatteringRamp(boolean isPracticeBot){
+		super("Battering Ramp");
+		this.isPracticeBot = isPracticeBot;
+		
 		motor = new VictorSP(Constants.batteringRampMotor);
+		if(isPracticeBot){
+			talon = new CANTalon(Constants.rampTalon);
+			talon.changeControlMode(TalonControlMode.PercentVbus);
+			talon.setFeedbackDevice(FeedbackDevice.QuadEncoder);
+			talon.configNominalOutputVoltage(0.0f, -0.0f);
+			talon.configPeakOutputVoltage(12.0f, -12.0f);
+			talon.setEncPosition(0);
+		}
 		encoder = new RelativeEncoder(Constants.batteringRampEncA, Constants.batteringRampEncB);
+	    encoder.reset();
+	    motorSafegaurd = new VictorSafegaurd(encoder, motor, Constants.armPos_deadband);
 		
 		positionPid = new PID();
 		positionPid.setConstants(Constants.rampPos_kP, Constants.rampPos_kI, Constants.rampPos_kD);
+		positionPid.setDesiredPosition(getEncoder());
 		posHoldPid = new PID();
 		posHoldPid.setConstants(Constants.rampHold_kP, Constants.rampHold_kI, Constants.rampHold_kD);
+		posHoldPid.setDesiredPosition(getEncoder());
+		
+		Positions.NONE.set(Constants.nullPositionValue);
+		Positions.MOVING.set(Constants.nullPositionValue);
+		Positions.MANUAL.set(Constants.nullPositionValue);
+		Positions.UP.set(Constants.rampUpPosition);
+		Positions.DOWN.set(Constants.rampDownPosition);
+		Positions.MID.set(Constants.rampMidPosition);
+		Positions.SCALE.set(Constants.rampScalePosition);
+		Positions.SCALE.set(Constants.rampInsidePosition);
 
 		desiredPosition = Positions.NONE;
 		currentPosition = Positions.NONE;
-		
-		timer = new java.util.Timer("Ramp Scheduler");
-	    timer.scheduleAtFixedRate(run, 10, 10);
 	}
 	
 	public void setDesiredPos(Positions pos){
@@ -54,25 +86,10 @@ public class BatteringRamp {
 			desiredPosition = Positions.MANUAL;
 			return;
 		}
-		if(currentPosition != pos){
+		else{
 			currentPosition = Positions.MOVING;
 			desiredPosition = pos;
-			switch(desiredPosition){
-				case DOWN:
-					positionPid.setDesiredPosition(Constants.rampDownPosition);
-					break;
-				case MID:
-					positionPid.setDesiredPosition(Constants.rampMidPosition);
-					break;
-				case UP:
-					positionPid.setDesiredPosition(Constants.rampUpPosition);
-					break;
-				case SCALE:
-					positionPid.setDesiredPosition(Constants.rampScalePosition);
-					break;
-				default:
-					break;
-			}
+			positionPid.setDesiredPosition(desiredPosition.getValue());
 		}
 	}
 
@@ -84,62 +101,90 @@ public class BatteringRamp {
 	}
 	
 	public int getEncoder(){
-		return encoder.get();
+		if(isPracticeBot){
+			return talon.getEncPosition();
+		}
+		else{
+			return encoder.get();
+		}
 	}
 	
 	public void joystickControl(double value){
 		if(desiredPosition == Positions.MANUAL){
 			value = Util.applyDeadband(value, Constants.xboxControllerDeadband);
-			if((value > 0 && encoder.get() < Constants.rampUpPosition) || (value < 0 && encoder.get() > Constants.rampDownPosition)){
-				set(value);
-			}
+			set(value);
 		}
 	}
 	
-	private TimerTask run = new TimerTask() {
-        @Override
-        public void run() {
-			if(currentPosition == Positions.MOVING){
-				switch(desiredPosition){
-					case DOWN:
-					case UP:
-						if(Math.abs(positionPid.getError(getEncoder())) < Constants.rampPos_deadband){
-							set(0);
-							currentPosition = desiredPosition;
-							desiredPosition = Positions.NONE;
-							break;
-						}
-					case MID:
-					case SCALE:
-						double speed = positionPid.calcSpeed(getEncoder());
-						SmartDashboard.putNumber("Calced Speed", speed);
-						set(speed);
-						break;
-					case NONE:
-					case MANUAL:
-					case MOVING:
-						break;
-				}
-				if(positionPid.isDone(getEncoder(), Constants.rampPos_deadband)){
-					currentPosition = desiredPosition;
-					posHoldPid.setDesiredPosition(getEncoder());
-				}
+    @Override
+    public void runControlLoop() {
+    	motorSafegaurd.test();
+		if(currentPosition == Positions.MOVING && desiredPosition.getValue() != Constants.nullPositionValue){
+			switch(desiredPosition){
+				case DOWN:
+				case UP:
+				case MID:
+				case SCALE:
+				case INSIDE:
+					double speed = Util.limitValue(positionPid.calcSpeed(getEncoder()), 1.0);
+					set(speed);
+					break;
+				case NONE:
+				case MANUAL:
+				case MOVING:
+					break;
 			}
-			else{
-				if(!posHoldPid.isDone(getEncoder(), Constants.rampPos_deadband)){
-					motor.set(posHoldPid.calcSpeed(getEncoder()));
-				}
+			posHoldPid.setDesiredPosition(getEncoder());
+			if(positionPid.isDone(getEncoder(), Constants.rampPos_deadband)){
+				currentPosition = desiredPosition;
+				desiredPosition = Positions.NONE;
+				positionPid.resetAccumI();
 			}
 		}
-	};
+//		else if(currentPosition != Positions.MANUAL && posHoldPid.getDesiredPosition() != Constants.nullPositionValue){
+//			double speed = Util.limitValue(posHoldPid.calcSpeed(getEncoder()), 1.0);
+//			set(speed);
+//		}
+		else if(currentPosition != Positions.MANUAL){
+			set(0);
+		}
+	}
+	
+	public void stopMotors(){
+		set(0);
+	}
+	
+	public void resetEncoder(){
+		if(isPracticeBot){
+			talon.setEncPosition(0);
+		}
+		else{
+			encoder.reset();
+		}
+	}
 	
 	private void set(double value){
-		motor.set(value);
+		value = Util.limitValue(value, 1.0) * 0.6;
+		if(value != 0 && ((value < 0 && getEncoder() < Constants.rampDownPosition) || (value > 0 && getEncoder() > Constants.rampUpPosition))){
+			set(0);
+		}
+		else{
+			if(isPracticeBot){
+				talon.set(value);
+			}
+			else{
+				motor.set(value);
+			}
+		}
 	}
 	
+	@Override
 	public void sendSmartdashInfo(){
 		SmartDashboard.putBoolean("Ramp On Target", positionPid.isDone(getEncoder(), Constants.rampPos_deadband));
-		SmartDashboard.putString("Ramp Pos", currentPosition.name());
+		SmartDashboard.putString("Ramp Pos", getCurrentPos().name());
+		SmartDashboard.putNumber("Ramp Enc", getEncoder());
+		SmartDashboard.putBoolean("Ramp Motor Good", !motorSafegaurd.getCaution());
+		SmartDashboard.putNumber("Ramp random", this.getRandomMonitor());
 	}
 	
 }

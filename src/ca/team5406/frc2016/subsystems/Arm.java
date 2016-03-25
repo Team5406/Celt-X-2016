@@ -1,23 +1,20 @@
 package ca.team5406.frc2016.subsystems;
 
-import java.util.TimerTask;
-
 import ca.team5406.frc2016.Constants;
 import ca.team5406.util.Util;
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.CANTalon;
-import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import edu.wpi.first.wpilibj.CANTalon.TalonControlMode;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-public class Arm {
+public class Arm extends Subsystem{
 	
-	private CANTalon leftMotor;
-	private CANTalon rightMotor;
+	private CANTalon motorA;
+	private CANTalon motorB;
+	private AnalogInput pot;
 
 	private Positions desiredPosition;
 	private Positions currentPosition;
-
-	private java.util.Timer timer;
 	
 	public static enum Positions{
 		NONE,
@@ -26,38 +23,53 @@ public class Arm {
 		CARRY,
 		INSIDE,
 		MOVING,
-		MANUAL
+		MANUAL;
+
+	    private int id;
+	    public int getValue() { return id; }
+		public void set(int i) {
+			this.id = i;
+		}
 	}
 	
 	public Arm(){
-		leftMotor = new CANTalon(Constants.armMotorA);
-		leftMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
-		leftMotor.changeControlMode(TalonControlMode.Position);
-		leftMotor.setPosition(0);
-		leftMotor.reverseOutput(true);
-		leftMotor.setPID(Constants.armPos_kP, Constants.armPos_kI, Constants.armPos_kD);
+		super("Arm");
+		
+		motorA = Util.createArmTalon(Constants.armMotorA);
+		motorB = Util.createArmTalon(Constants.armMotorB);
+		pot = new AnalogInput(Constants.armPot);
+		
+		motorB.changeControlMode(TalonControlMode.Follower);
+		motorB.set(motorB.getDeviceID());
+		motorA.reverseOutput(false);
+		motorB.reverseOutput(true);
+		motorB.reverseSensor(true);
 
-		rightMotor = new CANTalon(Constants.armMotorB);
-		rightMotor.reverseOutput(true);
-		rightMotor.changeControlMode(TalonControlMode.Follower);
-		rightMotor.set(leftMotor.getDeviceID());
+		Positions.NONE.set(Constants.nullPositionValue);
+		Positions.MOVING.set(Constants.nullPositionValue);
+		Positions.MANUAL.set(Constants.nullPositionValue);
+		Positions.UP.set(Constants.armUpPos);
+		Positions.DOWN.set(Constants.armDownPos);
+		Positions.CARRY.set(Constants.armCarryPos);
+		Positions.INSIDE.set(Constants.armInsidePos);
 
 		desiredPosition = Positions.NONE;
 		currentPosition = Positions.NONE;
-		
-		timer = new java.util.Timer("Arm Scheduler");
-	    timer.scheduleAtFixedRate(run, 10, 10);
 	}
 	
 	public void setDesiredPos(Positions pos){
 		if(pos == Positions.MANUAL){
-			leftMotor.changeControlMode(TalonControlMode.PercentVbus);
+			motorA.changeControlMode(TalonControlMode.PercentVbus);
+			motorB.changeControlMode(TalonControlMode.PercentVbus);
+			
 			currentPosition = Positions.MANUAL;
 			desiredPosition = Positions.MANUAL;
-			return;
 		}
-		if(currentPosition != pos){
-			leftMotor.changeControlMode(TalonControlMode.Position);
+		else if(currentPosition != pos){
+			motorA.changeControlMode(TalonControlMode.Position);
+			motorB.changeControlMode(TalonControlMode.Follower);
+			motorB.set(motorA.getDeviceID());
+			
 			currentPosition = Positions.MOVING;
 			desiredPosition = pos;
 		}
@@ -74,41 +86,53 @@ public class Arm {
 	public void joystickControl(double value){
 		if(desiredPosition == Positions.MANUAL){
 			value = Util.applyDeadband(value, Constants.xboxControllerDeadband);
-			if((value > 0 && (leftMotor.getEncPosition() < (Constants.armUpPos - Constants.armPos_deadband))) || (value < 0 && (leftMotor.getEncPosition() > (Constants.armDownPos + Constants.armPos_deadband)))){
-				set(value);
-			}
+			setSpeed(value);
 		}
 	}
 	
-	private TimerTask run = new TimerTask() {
-        @Override
-        public void run() {
-			switch(desiredPosition){
-				case DOWN:
-					leftMotor.set(Constants.armDownPos);
-					break;
-				case CARRY:
-					leftMotor.set(Constants.armCarryPos);
-					break;
-				case INSIDE:
-					leftMotor.set(Constants.armInsidePos);
-					break;
-				case UP:
-					leftMotor.set(Constants.armUpPos);
-					break;
-				default:
-					break;
+    @Override
+    public void runControlLoop() {
+//    	talonSafegaurd.test();
+    	if(currentPosition != Positions.MANUAL){
+	    	double pos = desiredPosition.getValue();
+	    	if(pos == Constants.nullPositionValue) pos = getEncoder();
+			motorA.set(pos);
+			if(Math.abs(motorA.getEncPosition() - desiredPosition.getValue()) < Constants.armPos_deadband){
+				currentPosition = desiredPosition;
 			}
-		}
-	};
-	
-	private void set(double speed){
-		leftMotor.set(-speed);
+    	}
 	}
 	
+	public void stopMotors(){
+		setSpeed(0);
+	}
+	
+	private void setSpeed(double speed){
+		motorA.set(speed);
+		if(currentPosition == Positions.MANUAL){
+			motorB.set(-speed);
+		}
+	}
+	
+	public void resetEncoders(){
+		motorA.setEncPosition(0);
+		motorB.setEncPosition(0);
+	}
+	
+	public int getEncoder(){
+		return motorA.getEncPosition();
+	}
+	
+	public double getPot(){
+		return pot.getValue();
+	}
+	
+	@Override
 	public void sendSmartdashInfo(){
-		SmartDashboard.putString("Arm Position", desiredPosition.name());
-		SmartDashboard.putBoolean("Arm On Target", (leftMotor.getError() < Constants.armPos_deadband));
+		SmartDashboard.putNumber("Arm EncA", motorA.getEncPosition());
+		SmartDashboard.putNumber("Arm EncB", motorB.getEncPosition());
+		SmartDashboard.putString("Arm Position", getCurrentPos().name());
+		SmartDashboard.putBoolean("Arm On Target", (motorA.getError() < Constants.armPos_deadband));
 	}
 
 }

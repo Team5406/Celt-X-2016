@@ -1,41 +1,46 @@
 package ca.team5406.frc2016.auto;
 
-import java.util.TimerTask;
-
-import edu.wpi.first.wpilibj.DriverStation;
-
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public abstract class AutonomousRoutine {
 
-	
-	private java.util.Timer timer;
-	private String name;
+	private String name = "Default";
+	private boolean running;
+	private double randomMonitor;
 	
 	public AutonomousRoutine(String name){
-		name = this.name;
+		this.name = name;
+		running = false;
 	}
 	
-	private TimerTask run = new TimerTask() {
-        @Override
-        public void run() {
-        	if(!DriverStation.getInstance().isAutonomous() || DriverStation.getInstance().isDisabled()){
-        		timer.cancel();
-        	}
-        	execute();
-        }
-    };
+	public boolean isRunning(){
+		return running;
+	}
+	
+	public String getName(){
+		return name;
+	}
 	
 	public void start(){
+		running = true;
 		init();
-		timer = new java.util.Timer(name + " Scheduler");
-	    timer.scheduleAtFixedRate(run, 10, 10);
 	}
 	
-	public void kill(){
-		timer.cancel();
+	public void stop(){
+		running = false;
 		end();
 	}
+	
+	public void run(){
+		randomMonitor = Math.random();
+		execute();
+	}
+	
+	public void sendSmartDashInfo(){
+		SmartDashboard.putNumber("Auton Random", randomMonitor);
+	}
 
+	public abstract void resetTimer();
 	public abstract void init();
 	public abstract void execute();
 	public abstract void end();

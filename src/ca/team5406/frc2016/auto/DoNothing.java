@@ -13,7 +13,7 @@ public class DoNothing extends AutonomousRoutine{
 
 	@Override
 	public void execute() {
-		kill();
+		end();
 	}
 
 	@Override
@@ -21,4 +21,8 @@ public class DoNothing extends AutonomousRoutine{
 		
 	}
 
+	@Override
+	public void resetTimer(){
+		
+	}
 }

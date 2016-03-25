@@ -1,61 +1,82 @@
 package ca.team5406.frc2016.subsystems;
 
-import java.util.TimerTask;
-
 import ca.team5406.frc2016.Constants;
+import edu.wpi.first.wpilibj.CANTalon;
+import edu.wpi.first.wpilibj.CANTalon.TalonControlMode;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-public class Intake {
+public class Intake extends Subsystem {
 
 	private VictorSP intakeMotorA;
-	private VictorSP intakeMotorB;
+	private CANTalon intakeTalon;
 	private DigitalInput ballSensor;
+	
+	private boolean isPracticeBot;
 	
 	private boolean forward;
 	private boolean reverse;
-	
-	private java.util.Timer timer;
 
-	public Intake(){
-		intakeMotorA = new VictorSP(Constants.intakeMotorA);
-		intakeMotorB = new VictorSP(Constants.intakeMotorB);
+	public Intake(boolean isPracticeBot){
+		super("Intake");
+		
+		this.isPracticeBot = isPracticeBot;
+		if(isPracticeBot){
+			intakeTalon = new CANTalon(Constants.intakeTalon);
+			intakeTalon.changeControlMode(TalonControlMode.PercentVbus);
+		    intakeTalon.configNominalOutputVoltage(+0.0f, -0.0f);
+		    intakeTalon.configPeakOutputVoltage(+12.0f, -12.0f);
+		}
+		else{
+			intakeMotorA = new VictorSP(Constants.intakeMotorA);
+		}
 		ballSensor = new DigitalInput(Constants.ballSensor);
 		forward = false;
 		reverse = false;
-		timer = new java.util.Timer("Intake Scheduler");
-	    timer.scheduleAtFixedRate(run, 10, 10);
+
+	}
+	
+	public void stopMotors(){
+		forward = false;
+		reverse = false;
+		setIntakeSpeed(0.0);
 	}
 	
 	public void setIntakeSpeed(double speed){
-		intakeMotorA.set(-speed);
-		intakeMotorB.set(speed);
+		if(isPracticeBot){
+			intakeTalon.set(-speed);
+		}
+		else{
+			intakeMotorA.set(-speed);
+		}
 	}
 	
 	public boolean hasBall(){
 		return !ballSensor.get();
 	}
 	
-	public void setIntakeButtons(boolean forward, boolean reverse){
-		forward = this.forward;
-		reverse = this.reverse;
+	public void setIntakeButtons(boolean wantsForward, boolean wantsReverse){
+		forward = wantsForward;
+		reverse = wantsReverse;
 	}
 	
-	private TimerTask run = new TimerTask() {
-        @Override
-        public void run() {
-		if(forward && !hasBall()){
-				setIntakeSpeed(1.0);
-			}
-			else if(reverse){
-				setIntakeSpeed(-1.0);
-			}
-			else{
-				setIntakeSpeed(0.0);
-			}
+	private int getDesiredDirection(){
+		return (forward ? 1 : 0) + (reverse ? -1: 0);
+	}
+	
+	@Override
+    public void runControlLoop() {
+    	if(getDesiredDirection() == 1){
+			setIntakeSpeed(1.0);
 		}
-	};
+		else if(getDesiredDirection() == -1){
+			setIntakeSpeed(-1.0);
+		}
+		else{
+			setIntakeSpeed(0.25);
+		}
+	}
 	
 	public void sendSmartdashInfo(){
 		SmartDashboard.putBoolean("Has Ball", hasBall());
