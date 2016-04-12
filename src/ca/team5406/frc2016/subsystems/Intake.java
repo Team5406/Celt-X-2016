@@ -17,9 +17,11 @@ public class Intake extends Subsystem {
 	
 	private boolean forward;
 	private boolean reverse;
+	
+	public static final String NAME = "Intake";
 
 	public Intake(boolean isPracticeBot){
-		super("Intake");
+		super(NAME);
 		
 		this.isPracticeBot = isPracticeBot;
 		if(isPracticeBot){

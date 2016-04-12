@@ -16,6 +16,8 @@ public class Arm extends Subsystem{
 	private Positions desiredPosition;
 	private Positions currentPosition;
 	
+	public static final String NAME = "Arm";
+	
 	public static enum Positions{
 		NONE,
 		UP,
@@ -32,9 +34,8 @@ public class Arm extends Subsystem{
 		}
 	}
 	
-	public Arm(){
-		super("Arm");
-		
+	public Arm(boolean isPracticeBot){
+		super(NAME);
 		motorA = Util.createArmTalon(Constants.armMotorA);
 		motorB = Util.createArmTalon(Constants.armMotorB);
 		pot = new AnalogInput(Constants.armPot);
@@ -44,7 +45,6 @@ public class Arm extends Subsystem{
 		motorA.reverseOutput(false);
 		motorB.reverseOutput(true);
 		motorB.reverseSensor(true);
-
 		Positions.NONE.set(Constants.nullPositionValue);
 		Positions.MOVING.set(Constants.nullPositionValue);
 		Positions.MANUAL.set(Constants.nullPositionValue);

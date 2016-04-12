@@ -14,7 +14,9 @@ public class RobotStateController extends Subsystem{
 	private Arm.Positions armPosOverride;
 	private BatteringRamp.Positions rampPosOverride;
 
-	public enum RobotState{
+	public static String NAME = "Robot State Controller";
+	
+	public static enum RobotState{
 		DOWN_DOWN,
 		CARRY_MID,
 		CARRY_SCALE,
@@ -37,7 +39,7 @@ public class RobotStateController extends Subsystem{
 	}
 	
 	public RobotStateController(Arm arm, BatteringRamp ramp){
-		super("Robot State Controller");
+		super(NAME);
 		this.arm = arm;
 		this.ramp = ramp;
 
@@ -83,6 +85,15 @@ public class RobotStateController extends Subsystem{
 	
 	public BatteringRamp.Positions getRampPos(){
 		return ramp.getCurrentPos();
+	}
+	
+	public RobotState getRobotState(){
+		for(RobotState state : RobotState.values()){
+			if(state.getArmPos() == getArmPos() && state.getRampPos() == getRampPos()){
+				return state;
+			}
+		}
+		return RobotState.NONE_NONE;
 	}
 
 	@Override

@@ -24,7 +24,7 @@ public class CrossOther extends AutonomousRoutine{
 	public void init() {
 		autonStep = 0;
 		drive.resetDriveTo();
-		drive.resetEncoder();
+		drive.resetEncoders();
 		drive.shiftUp();
 		timer.start();
 		timer.reset();
@@ -38,26 +38,29 @@ public class CrossOther extends AutonomousRoutine{
 	@Override
 	public void execute() {
 		SmartDashboard.putNumber("Auton Step", autonStep);
-		if(timer.get() >= 2.5){
-			drive.stopMotors();
-			return;
-		}
-		else{
-			switch(autonStep){
-				default:
-					end();
+		switch(autonStep){
+			default:
+				end();
+				break;
+			case 0:
+				robotState.setRobotState(RobotStateController.RobotState.CARRY_MID);
+				if(super.getStepTimer() >= 2.5){
+					autonStep = -1;
 					break;
-				case 0:
-					robotState.setRobotState(RobotStateController.RobotState.CARRY_MID);
-					if(drive.driveToDistance(-7500, true, 1.0)){ //-2600
-						drive.resetDriveTo();
-						drive.stopMotors();
-						autonStep++;
-					}
-					break;
-		//		case 1:
-			}
+				}
+				if(drive.driveToDistance(-7500, true, 1.0)){ //-2600
+					drive.resetDriveTo();
+					drive.stopMotors();
+					System.out.println("Auto Ended Successfully");
+					nextStep();
+				}
+				break;
 		}
+	}
+	
+	public void nextStep(){
+		autonStep++;
+		super.resetStepTimer();
 	}
 
 	@Override

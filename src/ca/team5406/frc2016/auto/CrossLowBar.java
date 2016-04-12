@@ -23,11 +23,11 @@ public class CrossLowBar extends AutonomousRoutine{
 
 	@Override
 	public void init() {
-//		robotState.setRobotState(RobotStateController.RobotState.INSIDE_MID);
+		robotState.setRobotState(RobotStateController.RobotState.INSIDE_MID);
 		autonStep = 0;
 		drive.shiftUp();
 		drive.resetDriveTo();
-		drive.resetEncoder();
+		drive.resetEncoders();
 		timer.start();
 	}
 	
@@ -40,54 +40,49 @@ public class CrossLowBar extends AutonomousRoutine{
 	public void execute() {
 		drive.shiftUp();
 		SmartDashboard.putNumber("Auton Step", autonStep);
-//		if(timer.get() >= 3.0){
-//			drive.stopMotors();
-//			return;
-//		}
-//		else{
-			switch(autonStep){
-			default:
-				end();
+		switch(autonStep){
+		default:
+			end();
+			break;
+		case 0:
+			if(super.getStepTimer() >= 2.0){
+				autonStep = -1;
 				break;
-			case 0:
-				drive.shiftDown();
-				if(drive.driveToDistance(-300, true, 1.0)){ //-500
-					drive.resetDriveTo();
-					drive.shiftUp();
-					robotState.setRobotState(RobotStateController.RobotState.DOWN_DOWN);
-					autonStep++;
-					drive.stopMotors();
-				}
-				break;
-			case 1:
-				boolean armGood = (robotState.getArmEnc() < Constants.armCarryPos) || robotState.getArmPos().equals(Arm.Positions.DOWN);
-				boolean rampGood = (robotState.getRampEnc() < Constants.rampMidPosition) || SmartDashboard.getString("Ramp Pos").equals(BatteringRamp.Positions.DOWN.name());
-				if(armGood && rampGood){
-					autonStep++;
-				}
-				break;
-			case 2:
-				if(drive.driveToDistance(-7000, true, 0.8)){
-					drive.resetDriveTo();
-					autonStep++;
-					drive.set(0.05, 0.05);
-				}
-				break;
-	//		case 3:
-	//			if(drive.driveToDistance(2300, true, 0.8)){
-	//				drive.resetDriveTo();
-	//				autonStep++;
-	//			}
-	//			break;
-	//		case 4:
-	//			if(drive.driveToDistance(-1500, true, 0.8)){
-	//				drive.resetDriveTo();
-	//				autonStep++;
-	//			}
-	//			break;
 			}
+			drive.shiftDown();
+			if(drive.driveToDistance(-300, true, 1.0)){ //-500
+				drive.resetDriveTo();
+				drive.shiftUp();
+				robotState.setRobotState(RobotStateController.RobotState.DOWN_DOWN);
+				nextStep();
+				drive.stopMotors();
+			}
+			break;
+		case 1:
+			boolean armGood = (robotState.getArmEnc() < Constants.armCarryPos) || robotState.getArmPos().equals(Arm.Positions.DOWN);
+			boolean rampGood = (robotState.getRampEnc() < Constants.rampMidPosition) || SmartDashboard.getString("Ramp Pos").equals(BatteringRamp.Positions.DOWN.name());
+			if(armGood && rampGood){
+				nextStep();
+			}
+			break;
+		case 2:
+			if(super.getStepTimer() >= 2.5){
+				autonStep = -1;
+				break;
+			}
+			if(drive.driveToDistance(-7000, true, 0.8)){
+				drive.resetDriveTo();
+				nextStep();
+				System.out.println("Auto Ended Successfully");
+			}
+			break;
 		}
-//	}
+	}
+	
+	public void nextStep(){
+		autonStep++;
+		super.resetStepTimer();
+	}
 	
 	@Override
 	public void end() {

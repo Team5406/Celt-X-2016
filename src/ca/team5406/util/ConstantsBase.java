@@ -85,7 +85,7 @@ public abstract class ConstantsBase {
         return new Constant("", Object.class, 0);
     }
 
-    public void loadFromFile() {
+    public void loadFromFileASDFG() {
 		try {
 			File file = getFile();
 			FileReader fr = new FileReader(file);

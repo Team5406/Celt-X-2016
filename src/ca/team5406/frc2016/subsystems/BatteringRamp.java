@@ -25,6 +25,7 @@ public class BatteringRamp extends Subsystem {
 	
 	private Positions desiredPosition;
 	private Positions currentPosition;
+	public static final String NAME = "Battering Ramp";
 	
 	public static enum Positions{
 		NONE,
@@ -44,7 +45,7 @@ public class BatteringRamp extends Subsystem {
 	}
 	
 	public BatteringRamp(boolean isPracticeBot){
-		super("Battering Ramp");
+		super(NAME);
 		this.isPracticeBot = isPracticeBot;
 		
 		motor = new VictorSP(Constants.batteringRampMotor);
@@ -74,7 +75,7 @@ public class BatteringRamp extends Subsystem {
 		Positions.DOWN.set(Constants.rampDownPosition);
 		Positions.MID.set(Constants.rampMidPosition);
 		Positions.SCALE.set(Constants.rampScalePosition);
-		Positions.SCALE.set(Constants.rampInsidePosition);
+		Positions.INSIDE.set(Constants.rampInsidePosition);
 
 		desiredPosition = Positions.NONE;
 		currentPosition = Positions.NONE;
@@ -102,7 +103,7 @@ public class BatteringRamp extends Subsystem {
 	
 	public int getEncoder(){
 		if(isPracticeBot){
-			return talon.getEncPosition();
+			return -talon.getEncPosition();
 		}
 		else{
 			return encoder.get();
@@ -164,7 +165,7 @@ public class BatteringRamp extends Subsystem {
 	}
 	
 	private void set(double value){
-		value = Util.limitValue(value, 1.0) * 0.6;
+		value = Util.limitValue(value, 1.0) * 0.8;
 		if(value != 0 && ((value < 0 && getEncoder() < Constants.rampDownPosition) || (value > 0 && getEncoder() > Constants.rampUpPosition))){
 			set(0);
 		}

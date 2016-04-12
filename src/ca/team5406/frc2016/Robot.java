@@ -5,7 +5,6 @@ import ca.team5406.frc2016.auto.*;
 import ca.team5406.frc2016.subsystems.*;
 import ca.team5406.util.joysticks.XboxController;
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -17,10 +16,9 @@ public class Robot extends IterativeRobot {
 	private XboxController driverGamepad;
 	private XboxController operatorGamepad;
 	
-	private DigitalInput practiceBotIdentifier;
 	private boolean isPracticeBot;
 	private Timer timer;
-	private Timer autonDelayTimer;
+//	private Timer autonDelayTimer;
 	
 	private Compressor compressor;
 	private Drive drive;
@@ -35,23 +33,24 @@ public class Robot extends IterativeRobot {
 	
 	private DigitalOutput statusLed;
 	
+	//Comp Bot TODO: Switch Status LED to port 9
+	
 	// Called once when the robot is booted
     public void robotInit() {
     	System.out.println("Robot Initializing");
-    	statusLed = new DigitalOutput(8);
-    	statusLed.set(false);
-    	new Constants().loadFromFile();
     	
+    	statusLed = new DigitalOutput(9);
+    	statusLed.set(false);
+
     	driverGamepad = new XboxController(0);
     	operatorGamepad = new XboxController(1);
     	
-    	practiceBotIdentifier = new DigitalInput(Constants.practiceBotIdentifier);
-    	isPracticeBot = practiceBotIdentifier.get();
-    	
+    	isPracticeBot = true;
+
     	compressor = new Compressor();
     	compressor.setClosedLoopControl(true);
     	drive = new Drive();
-    	arm = new Arm();
+    	arm = new Arm(isPracticeBot);
     	intake = new Intake(isPracticeBot);
     	ramp = new BatteringRamp(isPracticeBot);
     	scaler = new Scaler(isPracticeBot);
@@ -59,17 +58,18 @@ public class Robot extends IterativeRobot {
     	
     	autonSelector = new SendableChooser();
     	selectedRoutine = new DoNothing();
-    	
+
     	statusLed.set(true);
     	timer = new Timer();
     	timer.start();
-    	autonDelayTimer = new Timer();
+//    	autonDelayTimer = new Timer();
     	System.out.println("Init Done");
     }
     
     // Called the first time the robot enters disabled mode (after init)
     public void disabledInit() {
-//    	System.out.println("Disabled Start");
+    	SmartDashboard.putNumber("booting", Math.random());
+    	System.out.println("Disabled Start");
     	autonSelector.addDefault("Do Nothing", new DoNothing());
     	autonSelector.addObject("Cross LB or Port", new CrossLowBar(robotState, drive));
     	autonSelector.addObject("Cross LB and Score", new CrossLowAndScore(robotState, drive, intake));
@@ -78,56 +78,50 @@ public class Robot extends IterativeRobot {
     
     // Called periodically while the robot is disabled
     public void disabledPeriodic(){  
+    	SmartDashboard.putNumber("booting", Math.random());
     	updateStuff();
     }
     
     // Called each time the robot enters auton
     public void autonomousInit() {
-    	autonDelayTimer.start();
+//    	autonDelayTimer.start(); //Disabled until auto is fixed
     	selectedRoutine = (AutonomousRoutine) autonSelector.getSelected();
     	robotState.setRobotState(RobotStateController.RobotState.NONE_NONE);
-    	scaler.setDesiredPos(Scaler.Position.NONE, 0);
+    	scaler.setDesiredPos(Scaler.Position.START, 0);
     	selectedRoutine.start();
     	drive.stopMotors();
     	arm.stopMotors();
     	ramp.stopMotors();
+    	intake.stopMotors();
+    	scaler.stopMotors();
     	drive.resetDriveTo();
     	drive.resetTurnTo();
-    	firstRun = true;
     }
 
-    private boolean firstRun = true;
 	@Override
 	public void autonomousPeriodic() {
-//		SmartDashboard.putNumber("Auton Delay", 8.0 - autonDelayTimer.get());
-//		if(autonDelayTimer.get() >= 8.0){
-//			if(firstRun){
-//				firstRun = false;
-//				selectedRoutine.resetTimer();
-//			}
-//			autonDelayTimer.stop();
-			selectedRoutine.run();
-//		}
+//		selectedRoutine.run(); //Disabled until auto is fixed
 		selectedRoutine.sendSmartDashInfo();
 		updateStuff();
 	}
 
     // Called each time the robot enters tele-op
     public void teleopInit(){
-//    	System.out.println("Teleop Start");
+    	System.out.println("Teleop Start");
     	if(selectedRoutine.isRunning()){
     		selectedRoutine.stop();
     	}
 
     	drive.setControlMode(Drive.ControlMode.POWER);
     	robotState.setRobotState(RobotStateController.RobotState.NONE_NONE);
-    	scaler.setDesiredPos(Scaler.Position.NONE, 0);
+    	scaler.setDesiredPos(Scaler.Position.START, 0);
     	
-//    	drive.resetEncoder();
+    	drive.resetEncoders();
     	drive.stopMotors();
     	arm.stopMotors();
     	ramp.stopMotors();
     	intake.stopMotors();
+    	scaler.stopMotors();
     	drive.resetDriveTo();
     	drive.resetTurnTo();
     }
@@ -216,11 +210,16 @@ public class Robot extends IterativeRobot {
     }
 
 	public void updateStuff() {
-		for(Subsystem sub: Subsystem.registeredSubsystems){
-			if(isEnabled() || isAutonomous() || isTest()){
+		if(isEnabled() || isAutonomous() || isTest()){
+			for(Subsystem sub: Subsystem.registeredSubsystems){
+				sub.sendSmartdashInfo();
 				sub.run();
 			}
-			sub.sendSmartdashInfo();
+		}
+		else{
+			for(Subsystem sub: Subsystem.registeredSubsystems){
+				sub.sendSmartdashInfo();
+			}
 		}
 		
 //      SmartDashboard
@@ -229,7 +228,6 @@ public class Robot extends IterativeRobot {
         
 		if(timer.get() >= 1.0){
 			try{
-//				autonSelector = (SendableChooser) SmartDashboard.getData("Auton");
 		    	selectedRoutine = (AutonomousRoutine) autonSelector.getSelected();
 				SmartDashboard.putString("Selected Auto", selectedRoutine.getName());
 			}

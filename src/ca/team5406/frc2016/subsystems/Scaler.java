@@ -1,6 +1,7 @@
 package ca.team5406.frc2016.subsystems;
 
 import ca.team5406.frc2016.Constants;
+import ca.team5406.util.Timer;
 import ca.team5406.util.Util;
 import ca.team5406.util.sensors.RelativeEncoder;
 import edu.wpi.first.wpilibj.CANTalon;
@@ -18,14 +19,17 @@ public class Scaler extends Subsystem {
 	private CANTalon talonB;
 	
 	private RelativeEncoder enc;
-	private DigitalInput stopSensor;
 	
 	private boolean isPracticeBot;
 	
 	private Position desiredPosition;
 	private Position currentPosition;
+	
+	private Timer scalerTimer;
 
 	private Position previousPosition;
+	
+	public static final String NAME = "Scaler";
 	
 	public static enum Position{
 		START,
@@ -44,7 +48,7 @@ public class Scaler extends Subsystem {
 	}
 
 	public Scaler(boolean isPracticeBot) {
-		super("Scaler");
+		super(NAME);
 		this.isPracticeBot = isPracticeBot;
 		
 		if(isPracticeBot){
@@ -58,7 +62,6 @@ public class Scaler extends Subsystem {
 		motorB = new VictorSP(Constants.scalerMotorB);
 		
 		enc = new RelativeEncoder(Constants.scalerEncA, Constants.scalerEncB);
-		stopSensor = new DigitalInput(Constants.scalerStopSensor);
 
 		Position.IN.set(Constants.scalerInPosition);
 		Position.MID.set(Constants.scalerMidPosition);
@@ -71,12 +74,14 @@ public class Scaler extends Subsystem {
 		currentPosition = Position.NONE;
 		desiredPosition = Position.NONE;
 		previousPosition = Position.NONE;
+		
+		scalerTimer = new Timer();
 	}
 	
 	private void set(double value){
-		if(getStopSensor()){
-			value = 0.0;
-		}
+//		if(getStopSensor()){
+//			value = 0.0;
+//		}
 		value = Util.limitValue(value, 1.0);
 		if(isPracticeBot){
 			talonA.set(value);
@@ -102,12 +107,9 @@ public class Scaler extends Subsystem {
 	public int getEncoder(){
 		return -enc.get();
 	}
-	
-	public boolean getStopSensor(){
-		return stopSensor.get();
-	}
 
 	public void setDesiredPos(Position pos, int armEncPosition){
+		SmartDashboard.putString("setpos", pos.name());
 		if(pos != desiredPosition){
 			boolean armOk = false;
 			boolean scalerOk = false;
@@ -122,8 +124,10 @@ public class Scaler extends Subsystem {
 					}
 					break;
 				case OUT:
-					armOk = (armEncPosition >= (Constants.armUpPos - Constants.armPos_deadband));
+					armOk = (armEncPosition >= (Constants.armInsidePos + Constants.armPos_deadband));
 					scalerOk = (getEncoder() > (Constants.scalerStartPosition - Constants.scalerPosDeadband));
+					SmartDashboard.putBoolean("arm", armOk);
+					SmartDashboard.putBoolean("scaler", scalerOk);
 					if(armOk && scalerOk){
 						setPos(pos);
 					}
@@ -140,6 +144,10 @@ public class Scaler extends Subsystem {
 		currentPosition = Position.MOVING;
 	}
 	
+	public void stopMotors(){
+		set(0.0);
+	}
+	
 	@Override
 	public void runControlLoop() {
 		if(currentPosition == Position.MOVING){
@@ -147,13 +155,21 @@ public class Scaler extends Subsystem {
 				default:
 					break;
 				case IN:
-					if(getStopSensor()){
-						reachedDest();
-						set(0.0);
+					if(getEncoder() < Constants.scalerStartPosition){
+						if(!scalerTimer.isRunning()){
+							scalerTimer.reset();
+							scalerTimer.start();
+						}
+						if(scalerTimer.get() >= 0.5){
+							reachedDest();
+							break;
+						}
+						else{
+							set(-1.0);
+						}
 						break;
 					}
 				case OUT:
-				case START:
 					if(getEncoder() < desiredPosition.getValue() - Constants.scalerPosDeadband){
 						set(1.0);
 					}
@@ -165,6 +181,9 @@ public class Scaler extends Subsystem {
 						set(0.0);
 					}
 					break;
+				case START:
+					set(-0.2);
+					break;
 			}
 		}
 	}
@@ -173,13 +192,14 @@ public class Scaler extends Subsystem {
 		previousPosition = currentPosition;
 		currentPosition = desiredPosition;
 		desiredPosition = Position.NONE;
+		stopMotors();
 	}
 
 	@Override
 	public void sendSmartdashInfo() {
 		SmartDashboard.putNumber("Scaler Enc", getEncoder());
-		SmartDashboard.putBoolean("Scaler Stop", getStopSensor());
 		SmartDashboard.putString("Scaler Pos", currentPosition.name());
+		SmartDashboard.putString("Scaler DPos", desiredPosition.name());
 	}
 
 }
