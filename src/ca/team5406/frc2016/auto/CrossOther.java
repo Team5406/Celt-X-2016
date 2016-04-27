@@ -43,12 +43,12 @@ public class CrossOther extends AutonomousRoutine{
 				end();
 				break;
 			case 0:
-				robotState.setRobotState(RobotStateController.RobotState.CARRY_MID);
-				if(super.getStepTimer() >= 2.5){
+				robotState.setRobotState(RobotStateController.RobotState.CARRY_SCALE);
+				if(super.getStepTimer() >= 4.0){
 					autonStep = -1;
 					break;
 				}
-				if(drive.driveToDistance(-7500, true, 1.0)){ //-2600
+				if(drive.driveToDistance(-16*12, true, 1.0)){
 					drive.resetDriveTo();
 					drive.stopMotors();
 					System.out.println("Auto Ended Successfully");

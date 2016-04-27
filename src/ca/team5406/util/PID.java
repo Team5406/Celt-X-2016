@@ -73,6 +73,18 @@ public class PID {
 		return desiredPosition;
 	}
 	
+	public double getP(){
+		return this.kP;
+	}
+	
+	public double getI(){
+		return this.kI;
+	}
+	
+	public double getD(){
+		return this.kD;
+	}
+	
 	public void resetAccumI(){
 		accumI = 0.0;
 	}

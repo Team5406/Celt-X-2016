@@ -22,6 +22,7 @@ public class Constants extends ConstantsBase {
     public static int intakeMotorA = 0;
     public static int intakeMotorB = 1;
     public static int batteringRampMotor = 2;
+    public static int portRollerMotor = 6;
     public static int scalerMotorA = 7;
     public static int scalerMotorB = 8;
     
@@ -48,18 +49,30 @@ public class Constants extends ConstantsBase {
     public static int lowBarDist = 0;
     public static int portcullisDist = 0;
     public static int chevalDist = 0;
+    
+    //Drive Constants
+    public static double ticksPerInch = 84.04699612 * 1.1;//Determined experimentally //1.0 * 1024 * (28/15) / (Math.PI*7.375);
+    public static double highGearMult = 3.63;
+    public static double highGearTPF = (7.5/12 * Math.PI);
+    public static double lowGearTPF = highGearTPF * highGearMult;
+    public static double maxSpeed = 17.67; //rev / 10ms
+    public static double minTurnSpeed = 0.3;
+    public static double minDriveSpeed = 0.1;
+    public static double trackWidth = 1.75;
+    public static double maxLeftRPM = 5330;
+    public static double maxRightRPM = 5330;
 
     //Drive PID Constants
-    public static double highGearDriveTo_kP = 0.0005 * 7.08;
-    public static double highGearDriveTo_kI = 0.001 * 7.08;
-    public static double highGearDriveTo_kD = 0;
+    public static double highGearDriveTo_kP = 0.0006;// / (7.08 * 20.0/1024.0); 	//0.0005 //0.005
+    public static double highGearDriveTo_kI = 0.0008;// / (7.08 * 20.0/1024.0); 	//0.001 //0.01
+    public static double highGearDriveTo_kD = 0.003;								//0.0005//0.15
     public static double highGearDriveTo_kF = 0;
-    public static double highGearDriveToDeadband = 75;
+    public static double highGearDriveToDeadband = 0.75 * ticksPerInch;
     
-    public static double lowGearTurnTo_kP = 0.01;
-    public static double lowGearTurnTo_kI = 0.008; //0.0
-    public static double lowGearTurnTo_kD = 0.01;
-    public static double lowGearTurnToDeadband = 1;
+    public static double lowGearTurnTo_kP = 0.1;  //0.01
+    public static double lowGearTurnTo_kI = 0.008; //0.009
+    public static double lowGearTurnTo_kD = 0.1;  //0.01
+    public static double lowGearTurnToDeadband = 0.5;
 
     public static double lowGearSpeed_kP = 0;
     public static double lowGearSpeed_kI = 0;
@@ -73,15 +86,6 @@ public class Constants extends ConstantsBase {
     public static double highGearSpeed_kF = 0;
     public static double highGearSpeed_deadband = 0;
     
-    //Drive Constants
-    public static double ticksPerInch = 82.43;
-    public static double highGearMult = 3.63;
-    public static double highGearTPF = (7.5/12 * Math.PI);
-    public static double lowGearTPF = highGearTPF * highGearMult;
-    public static double maxSpeed = 17.67; //rev / 10ms
-    public static double minTurnSpeed = 0.3;
-    public static double minDriveSpeed = 0.1;
-    public static double trackWidth = 1.75;
     
     //Arm Constants
     public static int armUpPos = 53000;			//51000 //3000

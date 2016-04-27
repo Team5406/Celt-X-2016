@@ -28,7 +28,6 @@ public class DriveDistance extends Action{
 
 	@Override
 	public void init() {
-		drive.setControlMode(ControlMode.POWER);
 		drive.resetDriveTo();
 		drive.resetTurnTo();
 		drive.selectGear(gear);

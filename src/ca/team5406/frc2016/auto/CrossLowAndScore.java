@@ -15,7 +15,7 @@ public class CrossLowAndScore extends AutonomousRoutine{
 	
 	private int autonStep;
 
-	public CrossLowAndScore(RobotStateController robotState, Drive drive, Intake intake) {
+	public CrossLowAndScore(Drive drive, RobotStateController robotState, Intake intake) {
 		super("Cross LB and Score");
 		this.drive = drive;
 		this.robotState = robotState;
@@ -43,29 +43,30 @@ public class CrossLowAndScore extends AutonomousRoutine{
 	boolean rampGood;
 	@Override
 	public void execute() {
-		drive.shiftUp();
 		SmartDashboard.putNumber("Auton Step", autonStep);
 		switch(autonStep){
 		default:
 			end();
 			break;
 		case 0:
-			if(super.getStepTimer() >= 2.0){
-				autonStep = -1;
-				break;
-			}
-			drive.shiftDown();
-			if(drive.driveToDistance(800, false, 0.6)){ //-500
-				drive.resetDriveTo();
-				drive.shiftUp();
-				robotState.setRobotState(RobotStateController.RobotState.DOWN_DOWN);
-				nextStep();
-				drive.stopMotors();
-			}
+			robotState.setRobotState(RobotStateController.RobotState.CARRY_SCALE);
+			nextStep();
+			//Disable Initial Scoot since we don't have the ramp.
+//			if(super.getStepTimer() >= 5.0){
+//				autonStep = -1;
+//				break;
+//			}
+//			drive.set(0.5, 0.5);;
+//			if(drive.getAvgEncInches() >= 6){
+//				drive.stopMotors();
+//				drive.resetDriveTo();
+//				robotState.setRobotState(RobotStateController.RobotState.DOWN_DOWN);
+//				nextStep();
+//			}
 			break;
 		case 1:
 			armGood = (robotState.getArmEnc() <= Constants.armCarryPos) || robotState.getArmPos().equals(Arm.Positions.CARRY);
-			rampGood = (robotState.getRampEnc() <= Constants.rampMidPosition) || SmartDashboard.getString("Ramp Pos").equals(BatteringRamp.Positions.MID.name());
+			rampGood = true; //(robotState.getRampEnc() <= Constants.rampMidPosition) || SmartDashboard.getString("Ramp Pos").equals(BatteringRamp.Positions.MID.name());
 			if(armGood && rampGood){
 				armGood = false;
 				rampGood = false;
@@ -75,46 +76,44 @@ public class CrossLowAndScore extends AutonomousRoutine{
 			break;
 		case 2:
 			armGood = (robotState.getArmEnc() < Constants.armCarryPos) || robotState.getArmPos().equals(Arm.Positions.DOWN);
-			rampGood = (robotState.getRampEnc() < Constants.rampMidPosition) || SmartDashboard.getString("Ramp Pos").equals(BatteringRamp.Positions.DOWN.name());
+			rampGood = true; //(robotState.getRampEnc() < Constants.rampMidPosition) || SmartDashboard.getString("Ramp Pos").equals(BatteringRamp.Positions.DOWN.name());
 			if(armGood && rampGood){
 				nextStep();
 			}
 			break;
 		case 3:
-			if(super.getStepTimer() >= 4.0){
+			if(super.getStepTimer() >= 6.0){
 				autonStep = -1;
 				break;
 			}
-			if(drive.driveToDistance(6800, true, 0.8)){
+			if(drive.driveToDistance(9.8*12, true, 0.7)){
 				robotState.setRobotState(RobotStateController.RobotState.CARRY_UP);
 				drive.resetDriveTo();
 				drive.resetTurnTo();
-				drive.shiftDown();
 				nextStep();
 			}
 			break;
 		case 4:
-			if(super.getStepTimer() >= 4.0){
+			if(super.getStepTimer() >= 5.0){
 				autonStep = -1;
 				break;
 			}
 			if(drive.turnToAngle(20)){
 				drive.resetDriveTo();
 				drive.resetTurnTo();
-				drive.shiftUp();
+				drive.resetEncoders();
 				nextStep();
 			}
 			break;
 		case 5:
-			if(super.getStepTimer() >= 4.0){
+			if(super.getStepTimer() >= 6.0){
 				autonStep = -1;
 				break;
 			}
-			if(drive.driveToDistance(1000, true, 0.8)){
+			if(drive.driveToDistance(7.5*12, true, 0.7)){
 				robotState.setRobotState(RobotStateController.RobotState.DOWN_DOWN);
 				drive.resetDriveTo();
 				drive.resetTurnTo();
-				drive.shiftDown();
 				nextStep();
 			}
 			break;
@@ -123,20 +122,22 @@ public class CrossLowAndScore extends AutonomousRoutine{
 				autonStep = -1;
 				break;
 			}
-			if(drive.turnToAngle(27)){ //28 //30
+			if(drive.turnToAngle(36)){
 				drive.resetDriveTo();
 				drive.resetTurnTo();
-				drive.shiftUp();
+				drive.resetEncoders();
 				nextStep();
 			}
 			break;
 		case 7:
-			if(super.getStepTimer() >= 4.0){
-				autonStep++;
+			if(super.getStepTimer() >= 2.0){
+				nextStep();
+				drive.shiftDown();
 				break;
 			}
-			if(drive.driveToDistance(4800, true, 0.8)){
+			if(drive.driveToDistance(8*12, true, 0.8)){
 				drive.resetDriveTo();
+				drive.shiftDown();
 				nextStep();
 				System.out.println("Auto Ended Successfully");
 				timer.reset();
@@ -159,6 +160,7 @@ public class CrossLowAndScore extends AutonomousRoutine{
 	public void nextStep(){
 		autonStep++;
 		super.resetStepTimer();
+		drive.stopMotors();
 	}
 	
 	@Override

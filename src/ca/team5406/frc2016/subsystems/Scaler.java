@@ -6,7 +6,6 @@ import ca.team5406.util.Util;
 import ca.team5406.util.sensors.RelativeEncoder;
 import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.CANTalon.TalonControlMode;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.VictorSP;
 
@@ -26,8 +25,6 @@ public class Scaler extends Subsystem {
 	private Position currentPosition;
 	
 	private Timer scalerTimer;
-
-	private Position previousPosition;
 	
 	public static final String NAME = "Scaler";
 	
@@ -73,7 +70,6 @@ public class Scaler extends Subsystem {
 		
 		currentPosition = Position.NONE;
 		desiredPosition = Position.NONE;
-		previousPosition = Position.NONE;
 		
 		scalerTimer = new Timer();
 	}
@@ -189,7 +185,6 @@ public class Scaler extends Subsystem {
 	}
 	
 	private void reachedDest(){
-		previousPosition = currentPosition;
 		currentPosition = desiredPosition;
 		desiredPosition = Position.NONE;
 		stopMotors();

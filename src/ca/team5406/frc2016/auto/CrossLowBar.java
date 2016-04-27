@@ -14,8 +14,8 @@ public class CrossLowBar extends AutonomousRoutine{
 	
 	private int autonStep;
 
-	public CrossLowBar(RobotStateController robotState, Drive drive) {
-		super("Cross LB or Port");
+	public CrossLowBar(Drive drive,RobotStateController robotState) {
+		super("Cross LB");
 		this.drive = drive;
 		this.robotState = robotState;
 		timer = new Timer();
@@ -23,7 +23,7 @@ public class CrossLowBar extends AutonomousRoutine{
 
 	@Override
 	public void init() {
-		robotState.setRobotState(RobotStateController.RobotState.INSIDE_MID);
+		robotState.setRobotState(RobotStateController.RobotState.INSIDE_INSIDE);
 		autonStep = 0;
 		drive.shiftUp();
 		drive.resetDriveTo();
@@ -45,33 +45,36 @@ public class CrossLowBar extends AutonomousRoutine{
 			end();
 			break;
 		case 0:
-			if(super.getStepTimer() >= 2.0){
-				autonStep = -1;
-				break;
-			}
-			drive.shiftDown();
-			if(drive.driveToDistance(-300, true, 1.0)){ //-500
-				drive.resetDriveTo();
-				drive.shiftUp();
-				robotState.setRobotState(RobotStateController.RobotState.DOWN_DOWN);
-				nextStep();
-				drive.stopMotors();
-			}
+			robotState.setRobotState(RobotStateController.RobotState.DOWN_DOWN);
+			nextStep();
+//			if(super.getStepTimer() >= 2.0){
+//				autonStep = -1;
+//				break;
+//			}
+//			drive.shiftUp();
+//			if(drive.driveToDistance(-6, false, 1.0)){ //-500
+//				drive.resetDriveTo();
+//				drive.shiftUp();
+//				robotState.setRobotState(RobotStateController.RobotState.DOWN_DOWN);
+//				drive.stopMotors();
+//				nextStep();
+//			}
 			break;
 		case 1:
 			boolean armGood = (robotState.getArmEnc() < Constants.armCarryPos) || robotState.getArmPos().equals(Arm.Positions.DOWN);
-			boolean rampGood = (robotState.getRampEnc() < Constants.rampMidPosition) || SmartDashboard.getString("Ramp Pos").equals(BatteringRamp.Positions.DOWN.name());
+			boolean rampGood = true; //(robotState.getRampEnc() < Constants.rampMidPosition) || robotState.getRampPos().equals(BatteringRamp.Positions.DOWN);
 			if(armGood && rampGood){
 				nextStep();
 			}
 			break;
 		case 2:
-			if(super.getStepTimer() >= 2.5){
+			if(super.getStepTimer() >= 40){
 				autonStep = -1;
 				break;
 			}
-			if(drive.driveToDistance(-7000, true, 0.8)){
+			if(drive.driveToDistance(12*12, true, 0.8)){
 				drive.resetDriveTo();
+				drive.resetEncoders();
 				nextStep();
 				System.out.println("Auto Ended Successfully");
 			}

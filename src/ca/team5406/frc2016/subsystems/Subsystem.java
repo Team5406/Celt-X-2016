@@ -3,7 +3,9 @@ package ca.team5406.frc2016.subsystems;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public abstract class Subsystem {
+import ca.team5406.util.Loopable;
+
+public abstract class Subsystem implements Loopable {
 	
 	public static ArrayList<Subsystem> registeredSubsystems = new ArrayList<Subsystem>();
 	public static HashMap<String, Subsystem> subsystems = new HashMap<String, Subsystem>();

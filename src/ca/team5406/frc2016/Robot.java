@@ -1,29 +1,28 @@
-
 package ca.team5406.frc2016;
 
 import ca.team5406.frc2016.auto.*;
 import ca.team5406.frc2016.subsystems.*;
+import ca.team5406.util.Loopable;
+import ca.team5406.util.MultiLooper;
 import ca.team5406.util.joysticks.XboxController;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.IterativeRobot;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-public class Robot extends IterativeRobot {
+public class Robot extends IterativeRobot implements Loopable {
 
 	private XboxController driverGamepad;
 	private XboxController operatorGamepad;
 	
 	private boolean isPracticeBot;
-	private Timer timer;
-//	private Timer autonDelayTimer;
 	
 	private Compressor compressor;
 	private Drive drive;
 	private Arm arm;
 	private Intake intake;
+	private PortRoller roller;
 	private BatteringRamp ramp;
 	private Scaler scaler;
 	private RobotStateController robotState;
@@ -32,6 +31,9 @@ public class Robot extends IterativeRobot {
 	private AutonomousRoutine selectedRoutine;
 	
 	private DigitalOutput statusLed;
+	
+	private MultiLooper subsystemUpdater;
+	private MultiLooper slowUpdater;
 	
 	//Comp Bot TODO: Switch Status LED to port 9
 	
@@ -52,6 +54,7 @@ public class Robot extends IterativeRobot {
     	drive = new Drive();
     	arm = new Arm(isPracticeBot);
     	intake = new Intake(isPracticeBot);
+    	roller = new PortRoller();
     	ramp = new BatteringRamp(isPracticeBot);
     	scaler = new Scaler(isPracticeBot);
     	robotState = new RobotStateController(arm, ramp);
@@ -60,64 +63,89 @@ public class Robot extends IterativeRobot {
     	selectedRoutine = new DoNothing();
 
     	statusLed.set(true);
-    	timer = new Timer();
-    	timer.start();
+    	
+    	subsystemUpdater = new MultiLooper(1.0 / 100.0);
+    	subsystemUpdater.addLoopable(drive);
+    	subsystemUpdater.addLoopable(intake);
+    	subsystemUpdater.addLoopable(ramp);
+    	subsystemUpdater.addLoopable(scaler);
+    	subsystemUpdater.addLoopable(arm);
+    	subsystemUpdater.addLoopable(robotState);
+    	
+    	slowUpdater = new MultiLooper(1.0 / 50.0);
+    	slowUpdater.addLoopable(this);
+    	slowUpdater.start();
+
+//    	SmartDashboard.putNumber("100turn_kP", Constants.lowGearTurnTo_kP*100);
+//    	SmartDashboard.putNumber("100turn_kI", Constants.lowGearTurnTo_kI*100);
+//    	SmartDashboard.putNumber("100turn_kD", Constants.lowGearTurnTo_kD*100);
+    	
+//    	SmartDashboard.putNumber("100drive_kP", Constants.highGearDriveTo_kP*100);
+//    	SmartDashboard.putNumber("100drive_kI", Constants.highGearDriveTo_kI*100);
+//    	SmartDashboard.putNumber("100drive_kD", Constants.highGearDriveTo_kD*100);
+    	
 //    	autonDelayTimer = new Timer();
     	System.out.println("Init Done");
     }
     
     // Called the first time the robot enters disabled mode (after init)
     public void disabledInit() {
-    	SmartDashboard.putNumber("booting", Math.random());
     	System.out.println("Disabled Start");
+    	
+    	subsystemUpdater.stop();
+    	
     	autonSelector.addDefault("Do Nothing", new DoNothing());
-    	autonSelector.addObject("Cross LB or Port", new CrossLowBar(robotState, drive));
-    	autonSelector.addObject("Cross LB and Score", new CrossLowAndScore(robotState, drive, intake));
-    	autonSelector.addObject("Cross B or D", new CrossOther(drive, robotState));
-    }
-    
-    // Called periodically while the robot is disabled
-    public void disabledPeriodic(){  
-    	SmartDashboard.putNumber("booting", Math.random());
-    	updateStuff();
+    	autonSelector.addObject("Cross LB and Score (F)", new CrossLowAndScore(drive, robotState, intake));
+    	autonSelector.addObject("Cross LB (F)", new CrossLowBar(drive, robotState));
+    	autonSelector.addObject("Cross Port (F)", new CrossPort(drive, robotState, roller));
+    	autonSelector.addObject("Cross Cheval (F)", new CrossCheval(drive, robotState));
+    	autonSelector.addObject("Cross Port (F)", new CrossCheval(drive, robotState));
+    	autonSelector.addObject("Cross B or D (R)", new CrossOther(drive, robotState));
+    	
+//    	autonSelector.addObject("Drive Reverse 100in", new DistanceTest(drive, robotState));
+//    	autonSelector.addObject("Gather Drive Data", new GatherLinearizeData(drive));
+//    	autonSelector.addObject("PID Drive Test", new DrivePidTuneTest(drive));
+//    	autonSelector.addObject("PID Turn Test", new TurnPidTuneTest(drive));
     }
     
     // Called each time the robot enters auton
     public void autonomousInit() {
-//    	autonDelayTimer.start(); //Disabled until auto is fixed
-    	selectedRoutine = (AutonomousRoutine) autonSelector.getSelected();
+    	subsystemUpdater.start();
+    	
+		selectedRoutine = (AutonomousRoutine) autonSelector.getSelected();
+		selectedRoutine.start();
+		
     	robotState.setRobotState(RobotStateController.RobotState.NONE_NONE);
     	scaler.setDesiredPos(Scaler.Position.START, 0);
-    	selectedRoutine.start();
-    	drive.stopMotors();
-    	arm.stopMotors();
-    	ramp.stopMotors();
-    	intake.stopMotors();
-    	scaler.stopMotors();
+    	
     	drive.resetDriveTo();
     	drive.resetTurnTo();
+    	drive.resetEncoders();
+    	drive.resetGyro();
     }
 
 	@Override
 	public void autonomousPeriodic() {
-//		selectedRoutine.run(); //Disabled until auto is fixed
+		selectedRoutine.run();
 		selectedRoutine.sendSmartDashInfo();
-		updateStuff();
 	}
 
     // Called each time the robot enters tele-op
     public void teleopInit(){
     	System.out.println("Teleop Start");
+    	
+    	subsystemUpdater.start();
+    	
     	if(selectedRoutine.isRunning()){
     		selectedRoutine.stop();
     	}
 
-    	drive.setControlMode(Drive.ControlMode.POWER);
     	robotState.setRobotState(RobotStateController.RobotState.NONE_NONE);
     	scaler.setDesiredPos(Scaler.Position.START, 0);
     	
     	drive.resetEncoders();
     	drive.stopMotors();
+    	drive.shiftUp();
     	arm.stopMotors();
     	ramp.stopMotors();
     	intake.stopMotors();
@@ -140,12 +168,12 @@ public class Robot extends IterativeRobot {
         	drive.shiftDown();
         }
         
-//        Ramp Override
+//        Roller Control
         if(driverGamepad.getRightTriggerPressed()){
-        	robotState.setRampOverride(BatteringRamp.Positions.SCALE);
+        	roller.setIntakeSpeed(1.0);
         }
         else{
-        	robotState.setRampOverride(BatteringRamp.Positions.NONE);
+        	roller.setIntakeSpeed(0.0);
         }
         
 //      Operator Gamepad
@@ -205,42 +233,34 @@ public class Robot extends IterativeRobot {
         
 //        	Intake Control
         intake.setIntakeButtons(operatorGamepad.getRightTriggerPressed(), operatorGamepad.getLeftTriggerPressed());
-
-        updateStuff();
     }
 
-	public void updateStuff() {
-		if(isEnabled() || isAutonomous() || isTest()){
-			for(Subsystem sub: Subsystem.registeredSubsystems){
-				sub.sendSmartdashInfo();
-				sub.run();
-			}
-		}
-		else{
-			for(Subsystem sub: Subsystem.registeredSubsystems){
-				sub.sendSmartdashInfo();
-			}
-		}
-		
-//      SmartDashboard
+	@Override
+	public void runControlLoop(){
 		operatorGamepad.updateButtons();
 		driverGamepad.updateButtons();
-        
-		if(timer.get() >= 1.0){
+	}
+	
+	@Override
+	public void sendSmartdashInfo(){
+		if(isDisabled()){
 			try{
 		    	selectedRoutine = (AutonomousRoutine) autonSelector.getSelected();
 				SmartDashboard.putString("Selected Auto", selectedRoutine.getName());
 			}
 			catch(Exception ex){
-				System.out.println("Error reading auto");
-				ex.printStackTrace();
+				System.out.println("Error Reading Auto - This is probably okay.");
 			}
-			timer.reset();
+			for(Subsystem s: Subsystem.registeredSubsystems){
+				if(isOperatorControl() || isAutonomous()){
+					s.runControlLoop();
+				}
+				s.sendSmartdashInfo();
+			}
 		}
-		
-        SmartDashboard.putBoolean("Practice Bot", this.isPracticeBot);
+
     	SmartDashboard.putData("Auton", autonSelector);
+        SmartDashboard.putBoolean("Practice Bot", isPracticeBot);
     	SmartDashboard.putNumber("Random", Math.random());
-    	SmartDashboard.putNumber("DPad", operatorGamepad.getPOV());
 	}
 }

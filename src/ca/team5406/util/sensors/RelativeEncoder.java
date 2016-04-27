@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj.Encoder;
 public class RelativeEncoder extends Encoder{
 	
 	private int zero = 0;
-
 	
 	public RelativeEncoder(int aChannel, int bChannel, boolean reverse){
 		super(aChannel, bChannel, reverse);
